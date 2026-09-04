@@ -1,0 +1,670 @@
+/* ===========================================================
+   Dashboard design system
+   Shared tokens (kept consistent with auth.css primary family)
+   =========================================================== */
+
+.cal-root {
+  --cal-ink-900: #0f172a;
+  --cal-ink-700: #334155;
+  --cal-ink-500: #64748b;
+  --cal-ink-400: #94a3b8;
+  --cal-ink-200: #cbd5e1;
+  --cal-border: #e7eaf0;
+  --cal-bg: #fafaf9;
+  --cal-surface: #ffffff;
+  --cal-track: #edeff3;
+
+  --cal-primary: #6366f1;       /* aligned with auth.css --auth-primary */
+  --cal-primary-hover: #4f46e5;
+  --cal-primary-soft: #eef2ff;
+
+  --cal-success: #16a34a;
+  --cal-success-hover: #15803d;
+  --cal-success-soft: #ecfdf5;
+
+  --cal-accent: #f97316;
+  --cal-accent-soft: rgba(249, 115, 22, 0.14);
+
+  --cal-protein: #6366f1;
+  --cal-carbs: #f59e0b;
+  --cal-fat: #ec4899;
+
+  --cal-radius-sm: 8px;
+  --cal-radius-md: 12px;
+  --cal-radius-lg: 16px;
+  --cal-radius-xl: 20px;
+
+  --cal-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --cal-shadow-md: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  color: var(--cal-ink-900);
+  background: var(--cal-bg);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Skip link for keyboard users (WCAG 2.1 2.4.1 Bypass Blocks) */
+.cal-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 12px;
+  z-index: 1000;
+  padding: 8px 14px;
+  background: var(--cal-primary);
+  color: #fff;
+  border-radius: var(--cal-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+.cal-skip-link:focus-visible {
+  top: 12px;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ===========================================================
+   Topbar
+   =========================================================== */
+.cal-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 32px;
+  background: var(--cal-surface);
+  border-bottom: 1px solid var(--cal-border);
+  box-shadow: var(--cal-shadow-sm);
+}
+.cal-topbar-left,
+.cal-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.cal-topbar-right {
+  justify-content: flex-end;
+  flex: 1;
+}
+.cal-logo {
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--cal-ink-900);
+  white-space: nowrap;
+}
+.cal-plan-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--cal-success-hover);
+  background: var(--cal-success-soft);
+  border: 1px solid #bbf7d0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.cal-date {
+  font-size: 13.5px;
+  color: var(--cal-ink-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cal-ink-900);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+.cal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--cal-radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.cal-btn:active {
+  transform: translateY(1px);
+}
+.cal-btn:focus-visible {
+  outline: 2px solid var(--cal-primary);
+  outline-offset: 2px;
+}
+.cal-btn--ghost {
+  background: var(--cal-surface);
+  border-color: var(--cal-border);
+  color: var(--cal-ink-900);
+}
+.cal-btn--ghost:hover {
+  background: var(--cal-bg);
+  border-color: #cbd5e1;
+}
+.cal-btn--primary {
+  background: var(--cal-primary);
+  color: #fff;
+}
+.cal-btn--primary:hover {
+  background: var(--cal-primary-hover);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.28);
+}
+.cal-btn--success {
+  background: var(--cal-success);
+  color: #fff;
+}
+.cal-btn--success:hover {
+  background: var(--cal-success-hover);
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.28);
+}
+.cal-btn--on-dark {
+  background: var(--cal-success);
+  color: #fff;
+}
+.cal-btn--on-dark:hover {
+  background: var(--cal-success-hover);
+}
+.cal-btn--on-dark:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.cal-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===========================================================
+   Content layout
+   =========================================================== */
+.cal-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+.cal-greeting {
+  font-size: 14px;
+  color: var(--cal-ink-500);
+  margin: 0 0 4px;
+}
+.cal-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 28px;
+  line-height: 1.2;
+  color: var(--cal-ink-900);
+}
+
+/* ===========================================================
+   Hero — calorie ring + remaining
+   =========================================================== */
+.cal-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 44px;
+  background: var(--cal-ink-900);
+  color: #fff;
+  border-radius: var(--cal-radius-xl);
+  padding: 36px 40px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  box-shadow: var(--cal-shadow-md);
+}
+.cal-hero::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  right: -10%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(
+    circle,
+    rgba(249, 115, 22, 0.22) 0%,
+    rgba(249, 115, 22, 0) 70%
+  );
+  pointer-events: none;
+}
+.cal-ring-wrap {
+  position: relative;
+  width: 188px;
+  height: 188px;
+  flex-shrink: 0;
+}
+.cal-ring-wrap svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.cal-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+.cal-ring-icon {
+  margin-bottom: 6px;
+  opacity: 0.55;
+  color: #fff;
+}
+.cal-ring-value {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cal-ring-unit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
+  font-weight: 500;
+  margin-top: 5px;
+}
+.cal-hero-right {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+.cal-hero-remaining-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 2px;
+}
+.cal-hero-remaining-value {
+  font-size: 40px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.cal-hero-remaining-unit {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  margin-left: 6px;
+}
+.cal-hero-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin-top: 16px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.68);
+}
+.cal-hero-sub b {
+  color: #fff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.cal-hero-empty {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--cal-radius-sm);
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.45;
+}
+.cal-hero-cta {
+  margin-top: 20px;
+}
+
+/* ===========================================================
+   Macro strip
+   =========================================================== */
+.cal-card {
+  background: var(--cal-surface);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--cal-shadow-sm);
+}
+.cal-macro-strip {
+  margin-bottom: 16px;
+}
+.cal-macro-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+}
+.cal-macro-row + .cal-macro-row {
+  border-top: 1px solid var(--cal-bg);
+}
+.cal-macro-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--cal-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cal-macro-body {
+  flex: 1;
+  min-width: 0;
+}
+.cal-macro-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.cal-macro-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cal-ink-900);
+}
+.cal-macro-amount {
+  font-size: 12.5px;
+  color: var(--cal-ink-500);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cal-macro-track {
+  position: relative;
+  height: 6px;
+  background: var(--cal-track);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cal-macro-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cal-macro-fill {
+    transition: none;
+  }
+}
+
+/* Focus rings for group-focused rows (enhanced keyboard UX) */
+.cal-macro-row:focus-within {
+  background: var(--cal-bg);
+}
+
+/* ===========================================================
+   Stats strip
+   =========================================================== */
+.cal-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--cal-surface);
+  border: 1px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--cal-shadow-sm);
+}
+.cal-stat-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.4s ease, transform 0.4s ease, background 0.15s ease;
+}
+.cal-stat-cell.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.cal-stat-cell + .cal-stat-cell {
+  border-left: 1px solid var(--cal-bg);
+}
+.cal-stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--cal-radius-sm);
+  background: var(--cal-bg);
+  color: var(--cal-ink-400);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cal-stat-body {
+  min-width: 0;
+}
+.cal-stat-label {
+  font-size: 12.5px;
+  color: var(--cal-ink-500);
+  font-weight: 500;
+  margin: 0 0 2px;
+}
+.cal-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--cal-ink-900);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===========================================================
+   Accessibility helpers
+   =========================================================== */
+.cal-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Expose color-scheme so form controls respect it */
+.cal-root {
+  color-scheme: light;
+}
+
+/* ===========================================================
+   Responsive breakpoints
+   =========================================================== */
+
+/* Tablet: up to 900px */
+@media (max-width: 900px) {
+  .cal-topbar {
+    padding: 14px 20px;
+  }
+  .cal-content {
+    padding: 32px 20px 48px;
+  }
+  .cal-hero {
+    gap: 32px;
+    padding: 30px 30px;
+  }
+  .cal-ring-wrap {
+    width: 172px;
+    height: 172px;
+  }
+  .cal-ring-value {
+    font-size: 30px;
+  }
+  .cal-hero-remaining-value {
+    font-size: 34px;
+  }
+  .cal-page-title {
+    font-size: 24px;
+  }
+}
+
+/* Mobile mid: up to 720px — hero stacks, stats become 2-col */
+@media (max-width: 720px) {
+  .cal-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 28px 24px;
+  }
+  .cal-ring-wrap {
+    width: 160px;
+    height: 160px;
+    align-self: center;
+  }
+  .cal-stats-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cal-stat-cell:nth-child(3) {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid var(--cal-bg);
+  }
+  .cal-date {
+    display: none;
+  }
+}
+
+/* Mobile: up to 560px */
+@media (max-width: 560px) {
+  .cal-topbar {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .cal-plan-badge {
+    display: none;
+  }
+  .cal-topbar-right {
+    gap: 10px;
+  }
+  .cal-btn--ghost {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .cal-content {
+    padding: 24px 16px 40px;
+  }
+  .cal-page-title {
+    font-size: 22px;
+    margin-bottom: 22px;
+  }
+  .cal-ring-wrap {
+    width: 152px;
+    height: 152px;
+  }
+  .cal-ring-value {
+    font-size: 28px;
+  }
+  .cal-hero-remaining-value {
+    font-size: 30px;
+  }
+  .cal-stats-strip {
+    grid-template-columns: 1fr;
+  }
+  .cal-stat-cell + .cal-stat-cell,
+  .cal-stat-cell:nth-child(3) {
+    border-left: none;
+    border-top: 1px solid var(--cal-bg);
+  }
+  .cal-macro-row {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+}
+
+/* Tiny screens: up to 380px */
+@media (max-width: 380px) {
+  .cal-hero {
+    padding: 24px 18px;
+  }
+  .cal-ring-wrap {
+    width: 140px;
+    height: 140px;
+  }
+  .cal-ring-value {
+    font-size: 24px;
+  }
+  .cal-hero-remaining-value {
+    font-size: 26px;
+  }
+  .cal-hero-sub {
+    font-size: 13px;
+    gap: 8px 16px;
+  }
+  .cal-logo {
+    font-size: 15px;
+  }
+  .cal-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+}
+
+/* Reduced-motion global defaults */
+@media (prefers-reduced-motion: reduce) {
+  .cal-stat-cell {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+  .cal-btn,
+  .cal-logout,
+  .cal-plan-badge,
+  .cal-hero-empty,
+  .cal-macro-fill {
+    transition: none !important;
+  }
+}
+
+/* High-contrast mode tweaks */
+@media (forced-colors: active) {
+  .cal-topbar,
+  .cal-card,
+  .cal-hero {
+    border: 1px solid CanvasText;
+  }
+  .cal-btn {
+    border: 1px solid ButtonText;
+  }
+}

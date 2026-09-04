@@ -1,122 +1,192 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { AuthProvider, useAuth } from './AuthContext';
+import LoginPage from './LoginPage';
+import RegisterPage from './RegisterPage';
+import OnboardingPage from './OnboardingPage';
+import DashboardPage from './DashboardPage';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+function LandingPage() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+    <div style={landingStyles.container}>
+      <div style={landingStyles.hero}>
+        <div style={landingStyles.heroInner}>
+          <div style={landingStyles.badge}>🥗 Calorie Tracker</div>
+          <h1 style={landingStyles.heroTitle}>
+            Track your calories,
+            <br />
+            achieve your goals.
+          </h1>
+          <p style={landingStyles.heroSubtitle}>
+            The simplest way to log meals, monitor macros, and stay on track with
+            your fitness journey — whether you want to lose, maintain, or gain.
           </p>
+          <div style={landingStyles.heroButtons}>
+            <Link to="/register" style={landingStyles.primaryBtn}>
+              Get Started Free
+            </Link>
+            <Link to="/login" style={landingStyles.secondaryBtn}>
+              Sign In
+            </Link>
+          </div>
+          <div style={landingStyles.features}>
+            <div style={landingStyles.feature}>
+              <div style={landingStyles.featureIcon}>📊</div>
+              <div style={landingStyles.featureText}>Smart calorie tracking</div>
+            </div>
+            <div style={landingStyles.feature}>
+              <div style={landingStyles.featureIcon}>🎯</div>
+              <div style={landingStyles.featureText}>Personalized goals</div>
+            </div>
+            <div style={landingStyles.feature}>
+              <div style={landingStyles.featureIcon}>🥑</div>
+              <div style={landingStyles.featureText}>Dietary preferences</div>
+            </div>
+          </div>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </div>
+    </div>
+  );
 }
 
-export default App
+const landingStyles: Record<string, React.CSSProperties> = {
+  container: {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  },
+  hero: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px 24px',
+  },
+  heroInner: {
+    maxWidth: '700px',
+    textAlign: 'center',
+    color: '#fff',
+  },
+  badge: {
+    display: 'inline-block',
+    padding: '8px 20px',
+    background: 'rgba(255,255,255,0.15)',
+    borderRadius: '999px',
+    fontSize: '14px',
+    fontWeight: 600,
+    marginBottom: '24px',
+    backdropFilter: 'blur(8px)',
+  },
+  heroTitle: {
+    fontSize: '56px',
+    fontWeight: 800,
+    lineHeight: 1.1,
+    marginBottom: '20px',
+  },
+  heroSubtitle: {
+    fontSize: '18px',
+    lineHeight: 1.7,
+    marginBottom: '36px',
+    opacity: 0.92,
+    maxWidth: '560px',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+  },
+  heroButtons: {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: '48px',
+  },
+  primaryBtn: {
+    padding: '14px 32px',
+    background: '#fff',
+    color: '#5a67d8',
+    textDecoration: 'none',
+    borderRadius: '10px',
+    fontWeight: 700,
+    fontSize: '15px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+  },
+  secondaryBtn: {
+    padding: '14px 32px',
+    background: 'rgba(255,255,255,0.15)',
+    color: '#fff',
+    textDecoration: 'none',
+    borderRadius: '10px',
+    fontWeight: 700,
+    fontSize: '15px',
+    backdropFilter: 'blur(8px)',
+  },
+  features: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '16px',
+  },
+  feature: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    background: 'rgba(255,255,255,0.1)',
+    padding: '14px 18px',
+    borderRadius: '12px',
+    backdropFilter: 'blur(8px)',
+  },
+  featureIcon: {
+    fontSize: '26px',
+  },
+  featureText: {
+    fontSize: '14px',
+    fontWeight: 500,
+    textAlign: 'left',
+  },
+};
+
+function AppRoutes() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Loading...
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;

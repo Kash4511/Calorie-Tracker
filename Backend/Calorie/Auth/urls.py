@@ -1,12 +1,8 @@
-from django.contrib import admin
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from .views import RegisterView, OnboardingView, OnboardingStatusView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('register/', RegisterView.as_view(), name='register'),
+    path('onboarding/', OnboardingView.as_view(), name='onboarding'),
+    path('onboarding/status/', OnboardingStatusView.as_view(), name='onboarding-status'),
 ]
