@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'django.contrib.staticfiles',
     'Auth',
+    'logs',
+    'Dash'
 ]
 
 MIDDLEWARE = [

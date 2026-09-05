@@ -4,6 +4,7 @@ import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 import OnboardingPage from './OnboardingPage';
 import DashboardPage from './DashboardPage';
+import LogPage from './LogPage';
 import './App.css';
 
 function LandingPage() {
@@ -177,6 +178,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/log" element={<LogPage/>} />
     </Routes>
   );
 }

@@ -1,0 +1,287 @@
+/* Reuses --cal-* tokens defined in dashboard.css's .cal-root.
+   If this page can mount without DashboardPage ever mounting first,
+   copy the :root token block from dashboard.css into a shared file instead. */
+
+.log-root {
+  min-height: 100vh;
+  background: var(--cal-bg, #fafaf9);
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--cal-ink-900, #0f172a);
+  color-scheme: light;
+}
+.log-root .log-navbar-title h1 {
+  color: var(--cal-ink-900, #0f172a);
+}
+.log-root .log-meal-tab {
+  color: var(--cal-ink-900, #0f172a);
+}
+
+.log-navbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 32px;
+  background: var(--cal-surface, #fff);
+  border-bottom: 1px solid var(--cal-border, #e7eaf0);
+}
+.log-back-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--cal-border, #e7eaf0);
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.log-back-btn:hover {
+  background: var(--cal-bg, #fafaf9);
+}
+.log-navbar-title h1 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+.log-navbar-title p {
+  font-size: 12.5px;
+  color: var(--cal-ink-500, #64748b);
+  margin: 2px 0 0;
+}
+
+.log-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+.log-section-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--cal-ink-500, #64748b);
+  margin: 0 0 10px;
+}
+
+.log-meal-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.log-meal-tab {
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--cal-border, #e7eaf0);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.log-meal-tab.is-active {
+  border-color: var(--cal-accent, #f97316);
+  color: var(--cal-accent, #f97316);
+  background: color-mix(in srgb, var(--cal-accent, #f97316) 8%, white);
+  font-weight: 600;
+}
+
+.log-subtabs {
+  display: flex;
+  gap: 4px;
+  background: var(--cal-track, #edeff3);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.log-subtab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--cal-ink-500, #64748b);
+  cursor: pointer;
+}
+.log-subtab.is-active {
+  background: #fff;
+  color: var(--cal-ink-900, #0f172a);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+.log-subtab.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.log-status {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}
+.log-status--success {
+  background: var(--cal-success-soft, #ecfdf5);
+  color: var(--cal-success-hover, #15803d);
+  border: 1px solid #bbf7d0;
+}
+.log-status--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.log-search-input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--cal-border, #e7eaf0);
+  font-size: 14.5px;
+  font-family: inherit;
+  margin-bottom: 14px;
+}
+.log-search-input:focus-visible {
+  outline: 2px solid var(--cal-primary, #6366f1);
+  outline-offset: 1px;
+}
+.log-search-hint {
+  font-size: 13.5px;
+  color: var(--cal-ink-500, #64748b);
+  margin: 0 0 12px;
+}
+
+.log-results {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.log-result-card {
+  background: #fff;
+  border: 1px solid var(--cal-border, #e7eaf0);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.log-result-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+.log-result-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--cal-success-soft, #ecfdf5);
+  color: var(--cal-success, #16a34a);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.log-result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.log-result-name {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.log-result-meta {
+  font-size: 12.5px;
+  color: var(--cal-ink-500, #64748b);
+}
+.log-result-expand {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 0 16px 14px;
+}
+.log-grams-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--cal-ink-500, #64748b);
+}
+.log-grams-input {
+  width: 90px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--cal-border, #e7eaf0);
+  font-size: 14px;
+}
+
+.log-add-btn {
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: none;
+  background: var(--cal-success, #16a34a);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.log-add-btn:hover {
+  background: var(--cal-success-hover, #15803d);
+}
+.log-add-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.log-add-btn--wide {
+  width: 100%;
+  padding: 12px 18px;
+  margin-top: 6px;
+}
+
+.log-manual-form {
+  background: #fff;
+  border: 1px solid var(--cal-border, #e7eaf0);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.log-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--cal-ink-500, #64748b);
+}
+.log-field input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--cal-border, #e7eaf0);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--cal-ink-900, #0f172a);
+}
+.log-manual-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .log-navbar { padding: 14px 18px; }
+  .log-content { padding: 22px 16px 48px; }
+  .log-manual-grid { grid-template-columns: 1fr 1fr; }
+}

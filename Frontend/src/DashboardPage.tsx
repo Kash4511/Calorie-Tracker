@@ -201,7 +201,7 @@ export default function DashboardPage() {
     console.log('Add item to', key);
   };
 
-  return (
+return (
     <div className="cal-root">
       <a href="#cal-main" className="cal-skip-link">
         Skip to content
@@ -441,5 +441,5 @@ export default function DashboardPage() {
         </section>
       </main>
     </div>
-  );
+  )
 }
