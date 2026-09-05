@@ -11,7 +11,7 @@ function LandingPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         Loading...
       </div>
     );
@@ -65,11 +65,13 @@ function LandingPage() {
 
 const landingStyles: Record<string, React.CSSProperties> = {
   container: {
-    minHeight: '100vh',
+    minHeight: '100svh',
+    width: '100%',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   },
   hero: {
-    minHeight: '100vh',
+    minHeight: '100svh',
+    width: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -161,7 +163,7 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100svh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         Loading...
       </div>
     );
