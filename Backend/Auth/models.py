@@ -70,6 +70,36 @@ class Profile(models.Model):
 
     @property
     def water_goal_liters(self):
-        if not self.daily_calorie_goal:
-            return 0
-        return round(self.daily_calorie_goal / 1000, 2)
+        """
+        Calculate daily water intake goal based on body weight, activity level, and goal.
+        Formula: Base (0.5-1 oz per lb / ~30ml per kg) + activity bonus + goal adjustment
+        
+        Reference: Mayo Clinic, WHO, and fitness research:
+        - Sedentary: 30ml per kg
+        - Light: 35ml per kg  
+        - Moderate: 40ml per kg
+        - Active: 45ml per kg
+        - Very Active: 50ml per kg
+        Plus 500ml per 30 min of exercise (if logged)
+        """
+        if not self.weight_kg:
+            return 2.0  # Default fallback to 2L
+        
+        # Base water requirement by activity level (ml per kg)
+        activity_multipliers = {
+            'sedentary': 30,
+            'light': 35,
+            'moderate': 40,
+            'active': 45,
+            'very_active': 50,
+        }
+        
+        base_ml_per_kg = activity_multipliers.get(self.activity_level, 35)
+        base_liters = (self.weight_kg * base_ml_per_kg) / 1000
+        
+        # Adjust for goal (weight loss needs more hydration)
+        if self.goal == 'lose_weight':
+            base_liters *= 1.1  # 10% increase
+        
+        # Round to nearest 0.25L for easier tracking
+        return round(base_liters * 4) / 4

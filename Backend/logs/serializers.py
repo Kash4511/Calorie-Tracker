@@ -3,11 +3,13 @@ from .models import MealEntry, ActivityEntry, WaterLog, WeightLog, FoodItem
 
 
 class MealEntrySerializer(serializers.ModelSerializer):
+    food_item_id = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = MealEntry
         fields = [
             'id', 'date', 'meal_type', 'name', 'calories',
-            'protein_g', 'carbs_g', 'fat_g', 'sugar_g', 'created_at',
+            'protein_g', 'carbs_g', 'fat_g', 'sugar_g', 'created_at', 'servings', 'food_item_id',
         ]
         read_only_fields = ['id', 'created_at']
 

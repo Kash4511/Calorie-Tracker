@@ -285,3 +285,27 @@
   .log-content { padding: 22px 16px 48px; }
   .log-manual-grid { grid-template-columns: 1fr 1fr; }
 }
+
+.log-date-bar, .log-panel-heading, .log-meal-heading, .log-serving-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.log-date-bar { margin-bottom: 22px; }
+.log-date-bar h2, .log-panel-heading h2, .log-meal-heading h2 { margin: 0; font-size: 20px; color: var(--cal-ink-900, #0f172a); }
+.log-date-label, .log-kicker { margin: 0 0 3px; color: var(--cal-success, #16a34a); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.log-icon-btn, .log-modal-close { width: 34px; height: 34px; border: 1px solid var(--cal-border, #e7eaf0); border-radius: 50%; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.log-today-btn, .log-small-add { border: 1px solid var(--cal-border, #e7eaf0); border-radius: 9px; background: #fff; color: var(--cal-success-hover, #15803d); padding: 8px 12px; font-weight: 600; cursor: pointer; }
+.log-total-grid { display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+.log-total { min-height: 82px; padding: 14px; background: #fff; border: 1px solid var(--cal-border, #e7eaf0); border-radius: 12px; display: flex; flex-direction: column; justify-content: center; }
+.log-total span, .log-total small { color: var(--cal-ink-500, #64748b); font-size: 12px; }.log-total strong { font-size: 24px; color: var(--cal-ink-900, #0f172a); }.log-total small { font-size: 11px; }
+.log-add-panel, .log-meal-section { background: #fff; border: 1px solid var(--cal-border, #e7eaf0); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+.log-panel-heading { margin-bottom: 18px; }.log-panel-heading > svg { color: var(--cal-success, #16a34a); }
+.log-add-controls { display: grid; grid-template-columns: 160px 1fr; gap: 12px; }.log-field select, .log-field input { width: 100%; padding: 10px 12px; border: 1px solid var(--cal-border, #e7eaf0); border-radius: 8px; background: #fff; font: inherit; color: var(--cal-ink-900, #0f172a); }
+.log-search-wrap { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--cal-border, #e7eaf0); border-radius: 8px; }.log-search-wrap input { border: 0; padding-left: 0; outline: 0; }
+.log-food-results { display: grid; gap: 6px; max-height: 420px; overflow-y: auto; margin-top: 12px; padding: 2px; }
+.log-food-results.is-drawer-open { display: grid; gap: 6px; max-height: 420px; overflow-y: auto; margin-top: 8px; padding: 0; background: #fff; border: 1px solid var(--cal-border, #e7eaf0); border-radius: 12px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1); position: relative; z-index: 50; }
+.log-nutrition-preview { background: var(--cal-success-soft, #ecfdf5); border: 1px solid var(--cal-success, #16a34a); border-radius: 12px; padding: 14px; margin: 14px 0; }
+.log-preview-label { font-size: 13px; font-weight: 600; color: var(--cal-ink-900, #0f172a); margin: 0 0 10px; }
+.log-preview-values { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 13px; }
+.log-preview-values span { background: #fff; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--cal-success, #16a34a); color: var(--cal-ink-900, #0f172a); }
+.log-serving-row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--cal-border, #e7eaf0); }.log-serving-row > div { flex: 1; }.log-serving-row .log-field { width: 120px; }.log-meal-heading { margin-bottom: 14px; }.log-meal-heading h2 { font-size: 17px; }.log-meal-heading span { color: var(--cal-ink-500, #64748b); font-size: 12px; }.log-small-add { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }.log-entry-list { display: grid; gap: 8px; }.log-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--cal-border, #e7eaf0); }.log-entry-main { display: flex; flex-direction: column; gap: 2px; }.log-entry-main span, .log-entry-macros { color: var(--cal-ink-500, #64748b); font-size: 12px; }.log-entry-actions { display: flex; gap: 4px; }.log-entry-actions button { width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--cal-bg, #fafaf9); color: var(--cal-ink-500, #64748b); cursor: pointer; }.log-entry-actions button:hover { color: var(--cal-success-hover, #15803d); }.log-empty { color: var(--cal-ink-500, #64748b); font-size: 13px; margin: 0; }
+.log-modal-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(15, 23, 42, .35); }.log-modal { position: relative; width: min(100%, 420px); padding: 24px; background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(15,23,42,.2); }.log-modal h2 { margin: 0 0 8px; }.log-modal p:not(.log-kicker) { color: var(--cal-ink-500, #64748b); font-size: 13px; }.log-modal-close { position: absolute; top: 16px; right: 16px; }
+
+@media (max-width: 620px) { .log-total-grid { grid-template-columns: repeat(2, 1fr); }.log-total:first-child { grid-column: 1 / -1; }.log-add-controls, .log-serving-row { grid-template-columns: 1fr; display: grid; }.log-serving-row .log-field { width: 100%; }.log-entry { grid-template-columns: 1fr auto; }.log-entry-macros { grid-column: 1 / -1; }.log-entry-actions { grid-column: 2; grid-row: 1; } }

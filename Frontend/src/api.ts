@@ -14,6 +14,45 @@ export interface OnboardingData {
   diet_preference: string;
 }
 
+export type MealKey = 'breakfast' | 'lunch' | 'snacks' | 'dinner';
+
+export interface FoodItem {
+  id: number;
+  name: string;
+  category: string;
+  calories_per_100g: number;
+  protein_per_100g: number;
+  carbs_per_100g: number;
+  fat_per_100g: number;
+  sugar_per_100g: number;
+}
+
+export interface MealEntry {
+  id: number;
+  date: string;
+  meal_type: MealKey;
+  name: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  sugar_g: number;
+  servings: number;
+  food_item_id: number | null;
+}
+
+export interface DashboardData {
+  date: string;
+  goal: number;
+  consumed: number;
+  burned: number;
+  remaining: number;
+  macros: { consumed: Record<'protein' | 'carbs' | 'fat' | 'sugar', number>; goal: Record<string, number> };
+  water: { liters: number; goal: number };
+  weight: { today_kg: number | null; goal_kg: number };
+  meals: Record<MealKey, { items: Array<{ id: number; name: string; calories: number }>; kcal: number }>;
+}
+
 export interface AuthTokens {
   access: string;
   refresh: string;
@@ -98,4 +137,22 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  getFoods: (query: string): Promise<FoodItem[]> =>
+    request<FoodItem[]>(`/logs/foods/?q=${encodeURIComponent(query)}`),
+
+  getMeals: (date: string): Promise<MealEntry[]> =>
+    request<MealEntry[]>(`/logs/meals/?date=${encodeURIComponent(date)}`),
+
+  addFood: (data: { date: string; meal_type: MealKey; food_item_id: number; grams: number }): Promise<MealEntry> =>
+    request<MealEntry>('/logs/meals/from-food/', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateMeal: (id: number, servings: number): Promise<MealEntry> =>
+    request<MealEntry>(`/logs/meals/${id}/edit/`, { method: 'PATCH', body: JSON.stringify({ servings }) }),
+
+  deleteMeal: (id: number): Promise<void> =>
+    request<void>(`/logs/meals/${id}/`, { method: 'DELETE' }),
+
+  getDashboard: (date: string): Promise<DashboardData> =>
+    request<DashboardData>(`/logs/dashboard/today/?date=${encodeURIComponent(date)}`),
 };

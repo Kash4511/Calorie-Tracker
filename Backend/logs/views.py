@@ -2,14 +2,14 @@ from django.shortcuts import render
 
 # Create your views here.
 from django.utils import timezone
-from django.db.models import Sum
-from rest_framework import generics, status
+from django.db.models import Q, Sum
+from rest_framework import generics, status, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from Auth.models import Profile
-from .models import MealEntry, ActivityEntry, WaterLog, WeightLog
+from .models import MealEntry, ActivityEntry, WaterLog, WeightLog, FoodItem
 from .serializers import (
     MealEntrySerializer, ActivityEntrySerializer,
     WaterLogSerializer, WeightLogSerializer,
@@ -18,15 +18,46 @@ from .serializers import (
 
 
 class MealEntryListCreateView(generics.ListCreateAPIView):
-    """GET: today's meals for the logged-in user. POST: log a new meal item."""
+    """List or create meal entries for a selected calendar date."""
     serializer_class = MealEntrySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return MealEntry.objects.filter(user=self.request.user, date=timezone.localdate())
+        selected_date = self.request.query_params.get('date', str(timezone.localdate()))
+        return MealEntry.objects.filter(user=self.request.user, date=selected_date).order_by('created_at')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user, date=timezone.localdate())
+        serializer.save(user=self.request.user, date=self.request.data.get('date', str(timezone.localdate())))
+
+
+class MealEntryUpdateView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = MealEntrySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return MealEntry.objects.filter(user=self.request.user)
+
+    def perform_update(self, serializer):
+        entry = self.get_object()
+        raw_servings = self.request.data.get('servings')
+        if raw_servings is not None and entry.food_item_id:
+            try:
+                servings = float(raw_servings)
+                if servings <= 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                raise serializers.ValidationError({'servings': 'Servings must be positive.'})
+            food = entry.food_item
+            serializer.save(
+                servings=servings,
+                calories=round(food.calories_per_100g * servings),
+                protein_g=round(food.protein_per_100g * servings, 1),
+                carbs_g=round(food.carbs_per_100g * servings, 1),
+                fat_g=round(food.fat_per_100g * servings, 1),
+                sugar_g=round(food.sugar_per_100g * servings, 1),
+            )
+            return
+        serializer.save()
 
 
 class MealEntryDeleteView(generics.DestroyAPIView):
@@ -110,7 +141,7 @@ class TodayDashboardView(APIView):
 
     def get(self, request):
         user = request.user
-        today = timezone.localdate()
+        selected_date = request.query_params.get('date', str(timezone.localdate()))
 
         try:
             profile = user.profile
@@ -120,7 +151,7 @@ class TodayDashboardView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        meals_qs = MealEntry.objects.filter(user=user, date=today)
+        meals_qs = MealEntry.objects.filter(user=user, date=selected_date)
         consumed = meals_qs.aggregate(total=Sum('calories'))['total'] or 0
 
         macros_agg = meals_qs.aggregate(
@@ -129,12 +160,12 @@ class TodayDashboardView(APIView):
         )
         macros_consumed = {k: (v or 0) for k, v in macros_agg.items()}
 
-        burned = ActivityEntry.objects.filter(user=user, date=today).aggregate(
+        burned = ActivityEntry.objects.filter(user=user, date=selected_date).aggregate(
             total=Sum('calories_burned')
         )['total'] or 0
 
-        water = WaterLog.objects.filter(user=user, date=today).first()
-        weight = WeightLog.objects.filter(user=user, date=today).first()
+        water = WaterLog.objects.filter(user=user, date=selected_date).first()
+        weight = WeightLog.objects.filter(user=user, date=selected_date).first()
 
         goal = profile.daily_calorie_goal or 0
 
@@ -147,6 +178,7 @@ class TodayDashboardView(APIView):
             }
 
         return Response({
+            'date': selected_date,
             'goal': goal,
             'consumed': consumed,
             'burned': burned,
@@ -170,8 +202,16 @@ class FoodSearchView(generics.ListAPIView):
         q = self.request.query_params.get('q', '').strip()
         qs = FoodItem.objects.all()
         if q:
-            qs = qs.filter(name__icontains=q)
-        return qs[:30]  # cap results, this isn't paginated
+            search_terms = [q]
+            if q.lower() == 'daal':
+                search_terms.append('dal')
+            if q.lower() == 'anda' or q.lower() == 'ande':
+                search_terms.append('egg')
+            query = Q()
+            for term in search_terms:
+                query |= Q(name__icontains=term)
+            qs = qs.filter(query)
+        return qs[:200]  # keep the catalog responsive without hiding common foods
 
 
 class MealEntryFromFoodView(APIView):
@@ -187,6 +227,7 @@ class MealEntryFromFoodView(APIView):
         food_id = request.data.get('food_item_id')
         grams = request.data.get('grams')
         meal_type = request.data.get('meal_type')
+        selected_date = request.data.get('date', str(timezone.localdate()))
 
         if not all([food_id, grams, meal_type]):
             return Response(
@@ -213,7 +254,7 @@ class MealEntryFromFoodView(APIView):
         factor = grams / 100
         entry = MealEntry.objects.create(
             user=request.user,
-            date=timezone.localdate(),
+            date=selected_date,
             meal_type=meal_type,
             name=food.name,
             calories=round(food.calories_per_100g * factor),
@@ -221,5 +262,7 @@ class MealEntryFromFoodView(APIView):
             carbs_g=round(food.carbs_per_100g * factor, 1),
             fat_g=round(food.fat_per_100g * factor, 1),
             sugar_g=round(food.sugar_per_100g * factor, 1),
+            servings=round(factor, 2),
+            food_item=food,
         )
         return Response(MealEntrySerializer(entry).data, status=status.HTTP_201_CREATED)

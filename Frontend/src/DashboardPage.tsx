@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { api, type DashboardData } from './api';
 import './dashboard.css';
 
 type MacroKey = 'protein' | 'carbs' | 'fat' | 'sugar';
@@ -52,11 +53,17 @@ function useTodayLabel() {
   );
 }
 
+function useTodayIso() {
+  return useMemo(() => new Date().toISOString().slice(0, 10), []);
+}
+
 export default function DashboardPage() {
   const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [activeTab, setActiveTab] = useState<(typeof NAV_TABS)[number]>('Today');
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const dashboardDate = useTodayIso();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -66,36 +73,47 @@ export default function DashboardPage() {
     setReady(true);
   }, [isAuthenticated, navigate]);
 
+  useEffect(() => {
+    if (!ready) return;
+    api.getDashboard(dashboardDate).then(setDashboard).catch(() => setDashboard(null));
+  }, [dashboardDate, ready]);
+
   // ---- Placeholder data — wire to real API later ----
-  const consumed = 0;
-  const burned = 0;
-  const goal = 1640; // TODO: replace with TDEE-derived target from onboarding
+  const consumed = dashboard?.consumed ?? 0;
+  const burned = dashboard?.burned ?? 0;
+  const goal = dashboard?.goal ?? 0;
   const remaining = Math.max(goal - consumed + burned, 0);
   const progress = Math.min((consumed / goal) * 100, 100);
 
-  const macros: MacroRow[] = useMemo(
-    () => [
-      { key: 'protein', label: 'Protein', consumed: 0, goalG: 140 },
-      { key: 'carbs', label: 'Carbs', consumed: 0, goalG: 168 },
-      { key: 'fat', label: 'Fat', consumed: 0, goalG: 46 },
-      { key: 'sugar', label: 'Sugar', consumed: 0, goalG: 50 }, // TODO: derive from onboarding, not a fixed default
-    ],
-    []
-  );
+  const macros: MacroRow[] = useMemo(() => (['protein', 'carbs', 'fat', 'sugar'] as MacroKey[]).map((key) => ({
+    key,
+    label: key[0].toUpperCase() + key.slice(1),
+    consumed: dashboard?.macros.consumed[key] ?? 0,
+    goalG: dashboard?.macros.goal[key] ?? 0,
+  })), [dashboard]);
 
-  const [meals, setMeals] = useState<MealSection[]>([
-    { key: 'breakfast', label: 'Breakfast', kcal: 0, items: [] },
-    { key: 'lunch', label: 'Lunch', kcal: 0, items: [] },
-    { key: 'snacks', label: 'Snacks', kcal: 0, items: [] },
-    { key: 'dinner', label: 'Dinner', kcal: 0, items: [] },
-  ]);
+  const meals: MealSection[] = useMemo(() => (['breakfast', 'lunch', 'snacks', 'dinner'] as MealKey[]).map((key) => ({
+    key,
+    label: key[0].toUpperCase() + key.slice(1),
+    kcal: dashboard?.meals[key].kcal ?? 0,
+    items: dashboard?.meals[key].items.map((item) => item.name) ?? [],
+  })), [dashboard]);
 
-  // ---- Water — liters, goal derived from calorie target (1 mL per kcal) ----
+  // ---- Water — liters and goal from dashboard API ----
   const [waterLiters, setWaterLiters] = useState(0);
-  const waterGoalLiters = useMemo(() => Math.round((goal / 1000) * 100) / 100, [goal]);
+  const waterGoalLiters = useMemo(() => dashboard?.water.goal ?? 0, [dashboard]);
+
+  // Load water data from dashboard when it updates
+  useEffect(() => {
+    if (dashboard?.water.liters !== undefined) {
+      setWaterLiters(dashboard.water.liters);
+    }
+  }, [dashboard?.water.liters]);
 
   const adjustWater = (delta: number) => {
-    setWaterLiters((v) => Math.max(0, Math.round((v + delta) * 100) / 100));
+    const newValue = Math.max(0, Math.round((waterLiters + delta) * 100) / 100);
+    setWaterLiters(newValue);
+    // TODO: POST to /api/logs/water/today/ with delta or liters value
   };
 
   const [weightInput, setWeightInput] = useState('70');
@@ -182,7 +200,7 @@ export default function DashboardPage() {
       setEndState();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
+  }, [dashboard, ready]);
 
   if (!ready) return null;
 
@@ -197,8 +215,7 @@ export default function DashboardPage() {
   };
 
   const handleAddMeal = (key: MealKey) => {
-    // TODO: open meal-add modal / navigate to /log?meal=key
-    console.log('Add item to', key);
+    navigate(`/log?meal=${key}`);
   };
 
 return (
@@ -228,7 +245,10 @@ return (
               key={tab}
               type="button"
               className={`cal-nav-tab${activeTab === tab ? ' is-active' : ''}`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                setActiveTab(tab);
+                if (tab === 'Log') navigate('/log');
+              }}
               aria-current={activeTab === tab ? 'page' : undefined}
             >
               {tab}

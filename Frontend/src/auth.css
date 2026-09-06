@@ -334,6 +334,17 @@ body {
   max-width: 320px;
 }
 
+.onboarding-number__unit-select {
+  width: 100%;
+  max-width: 320px;
+  padding: 11px 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--auth-text);
+  font: inherit;
+}
+
 .onboarding-number__input {
   width: 100%;
   padding: 20px 72px 20px 20px;

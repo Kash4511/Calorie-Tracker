@@ -12,6 +12,8 @@ class MealEntry(models.Model):
     carbs_g = models.FloatField(default=0)
     fat_g = models.FloatField(default=0)
     sugar_g = models.FloatField(default=0)
+    servings = models.FloatField(default=1)
+    food_item = models.ForeignKey('FoodItem', null=True, blank=True, on_delete=models.SET_NULL, related_name='meal_entries')
     created_at = models.DateTimeField(auto_now_add=True)
 
 class ActivityEntry(models.Model):
