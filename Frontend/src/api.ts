@@ -147,6 +147,33 @@ export const api = {
   addFood: (data: { date: string; meal_type: MealKey; food_item_id: number; grams: number }): Promise<MealEntry> =>
     request<MealEntry>('/logs/meals/from-food/', { method: 'POST', body: JSON.stringify(data) }),
 
+  addManualMeal: (data: {
+    date?: string;
+    meal_type: MealKey;
+    name: string;
+    calories: number;
+    protein_g?: number;
+    carbs_g?: number;
+    fat_g?: number;
+    sugar_g?: number;
+    servings?: number;
+  }): Promise<MealEntry> =>
+    request<MealEntry>('/logs/meals/', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...data,
+        date: data.date || new Date().toISOString().slice(0, 10),
+      }),
+    }),
+
+  logActivity: (data: {
+    name: string;
+    calories_burned: number;
+    duration_minutes?: number;
+    date?: string;
+  }): Promise<unknown> =>
+    request<unknown>('/logs/activity/', { method: 'POST', body: JSON.stringify(data) }),
+
   updateMeal: (id: number, servings: number): Promise<MealEntry> =>
     request<MealEntry>(`/logs/meals/${id}/edit/`, { method: 'PATCH', body: JSON.stringify({ servings }) }),
 

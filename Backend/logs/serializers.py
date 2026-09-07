@@ -3,6 +3,7 @@ from .models import MealEntry, ActivityEntry, WaterLog, WeightLog, FoodItem
 
 
 class MealEntrySerializer(serializers.ModelSerializer):
+    date = serializers.DateField(required=False)
     food_item_id = serializers.IntegerField(read_only=True)
 
     class Meta:

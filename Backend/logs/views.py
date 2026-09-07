@@ -27,7 +27,8 @@ class MealEntryListCreateView(generics.ListCreateAPIView):
         return MealEntry.objects.filter(user=self.request.user, date=selected_date).order_by('created_at')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user, date=self.request.data.get('date', str(timezone.localdate())))
+        date = serializer.validated_data.get('date') or self.request.data.get('date') or timezone.localdate()
+        serializer.save(user=self.request.user, date=date)
 
 
 class MealEntryUpdateView(generics.RetrieveUpdateDestroyAPIView):
@@ -146,9 +147,15 @@ class TodayDashboardView(APIView):
         try:
             profile = user.profile
         except Profile.DoesNotExist:
-            return Response(
-                {'detail': 'Profile not found. Complete onboarding first.'},
-                status=status.HTTP_404_NOT_FOUND,
+            profile, _ = Profile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'daily_calorie_goal': 2000,
+                    'protein_pct': 0.30,
+                    'carbs_pct': 0.40,
+                    'fat_pct': 0.30,
+                    'sugar_goal_g': 50,
+                },
             )
 
         meals_qs = MealEntry.objects.filter(user=user, date=selected_date)

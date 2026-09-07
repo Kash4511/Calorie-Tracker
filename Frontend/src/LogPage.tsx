@@ -1,39 +1,90 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { api, type FoodItem, type MealEntry, type MealKey } from './api';
+import { ChevronLeft, Flame, LogOut, Plus, Repeat, ScanLine, Search, SquarePen } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { api, type FoodItem, type MealKey } from './api';
+import { useAuth } from './AuthContext';
 import './log.css';
 
 const MEALS: Array<{ key: MealKey; label: string }> = [
   { key: 'breakfast', label: 'Breakfast' }, { key: 'lunch', label: 'Lunch' },
   { key: 'dinner', label: 'Dinner' }, { key: 'snacks', label: 'Snacks' },
 ];
+const NAV_LINKS = [
+  { path: '/dashboard', label: 'Today' },
+  { path: '/log', label: 'Log' },
+  { path: '/foods', label: 'Foods' },
+  { path: '/progress', label: 'Progress' },
+  { path: '/settings', label: 'Settings' },
+];
+const ACTIVITIES = [
+  { label: 'Walking (brisk)', kcalPerMin: 5.3 },
+  { label: 'Running', kcalPerMin: 11.4 },
+  { label: 'Cycling', kcalPerMin: 7.5 },
+  { label: 'Yoga', kcalPerMin: 3.0 },
+  { label: 'Strength training', kcalPerMin: 6.0 },
+];
+type AddMode = 'search' | 'scan' | 'manual' | 'move';
+
 const isoDate = (date: Date) => date.toISOString().slice(0, 10);
-const formatDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
 export default function LogPage() {
   const navigate = useNavigate();
-  const today = isoDate(new Date());
-  const [selectedDate, setSelectedDate] = useState(today);
-  const [entries, setEntries] = useState<MealEntry[]>([]);
+  const location = useLocation();
+  const { isAuthenticated, logout, loading: authLoading } = useAuth();
+  const today = useMemo(() => isoDate(new Date()), []);
+
+  const queryMeal = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const m = params.get('meal') as MealKey | null;
+    if (m && ['breakfast', 'lunch', 'dinner', 'snacks'].includes(m)) {
+      return m;
+    }
+    return null;
+  }, [location.search]);
+
+  const [mealType, setMealType] = useState<MealKey>(queryMeal || 'breakfast');
+
+  useEffect(() => {
+    if (queryMeal && queryMeal !== mealType) {
+      setMealType(queryMeal);
+    }
+  }, [queryMeal, mealType]);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  const [addMode, setAddMode] = useState<AddMode>('search');
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [query, setQuery] = useState('');
-  const [mealType, setMealType] = useState<MealKey>('breakfast');
   const [grams, setGrams] = useState('100');
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
-  const [editing, setEditing] = useState<MealEntry | null>(null);
-  const [editServings, setEditServings] = useState('1');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [busy, setBusy] = useState(false);
   const [foodsLoading, setFoodsLoading] = useState(true);
   const [foodsError, setFoodsError] = useState(false);
 
-  const totals = useMemo(() => entries.reduce((sum, entry) => ({
-    calories: sum.calories + entry.calories, protein: sum.protein + entry.protein_g,
-    carbs: sum.carbs + entry.carbs_g, fat: sum.fat + entry.fat_g, sugar: sum.sugar + entry.sugar_g,
-  }), { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 }), [entries]);
-  const grouped = useMemo(() => MEALS.map((meal) => ({ ...meal, entries: entries.filter((entry) => entry.meal_type === meal.key) })), [entries]);
-  
+  // Scan tab
+  const [barcode, setBarcode] = useState('');
+  const [scanning, setScanning] = useState(false);
+
+  // Manual tab: Food name, Calories, Protein, Carbs, Fat, Sugar
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    sugar: '',
+  });
+
+  // Move tab
+  const [activity, setActivity] = useState(ACTIVITIES[0].label);
+  const [minutes, setMinutes] = useState('30');
+  const [steps, setSteps] = useState('0');
+
   const nutritionPreview = useMemo(() => {
     if (!selectedFood) return null;
     const amount = Number(grams);
@@ -48,13 +99,15 @@ export default function LogPage() {
     };
   }, [selectedFood, grams]);
 
+  const estimatedBurn = useMemo(() => {
+    const mins = Number(minutes);
+    const rate = ACTIVITIES.find((entry) => entry.label === activity)?.kcalPerMin ?? 5;
+    if (!Number.isFinite(mins) || mins <= 0) return 0;
+    return Math.round(mins * rate);
+  }, [activity, minutes]);
+
   useEffect(() => {
-    let active = true;
-    setBusy(true);
-    api.getMeals(selectedDate).then((data) => active && setEntries(data)).catch(() => active && setStatus('Could not load this day.')).finally(() => active && setBusy(false));
-    return () => { active = false; };
-  }, [selectedDate]);
-  useEffect(() => {
+    if (addMode !== 'search') return;
     setFoodsLoading(true);
     setFoodsError(false);
     setSelectedFood(null);
@@ -62,7 +115,7 @@ export default function LogPage() {
       api.getFoods(query).then(setFoods).catch(() => { setFoods([]); setFoodsError(true); }).finally(() => setFoodsLoading(false));
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [query]);
+  }, [query, addMode]);
 
   const foodImage = (food: FoodItem) => {
     const image = food.category === 'Fruits'
@@ -71,7 +124,7 @@ export default function LogPage() {
         ? 'photo-1540420773420-3366772f4999'
         : food.category === 'Dairy'
           ? 'photo-1628088062854-d1870b4553da'
-          : food.category === 'Non-Veg'
+          : food.category === 'Non-Veg' || food.category === 'Protein'
             ? 'photo-1604503468506-a8da13d82791'
             : food.category === 'Dal & Curry'
               ? 'photo-1601050690597-df0568f70950'
@@ -79,44 +132,309 @@ export default function LogPage() {
     return `https://images.unsplash.com/${image}?auto=format&fit=crop&w=96&h=96&q=80&fm=png`;
   };
 
-  const shiftDate = (days: number) => {
-    const date = new Date(`${selectedDate}T12:00:00`);
-    date.setDate(date.getDate() + days);
-    setSelectedDate(isoDate(date));
-  };
   const addFood = async (foodToAdd: FoodItem) => {
     const amount = Number(grams);
-    if (!Number.isFinite(amount) || amount <= 0) { setStatus('Enter a quantity greater than zero.'); return; }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setStatus({ text: 'Enter a quantity greater than zero.', type: 'error' });
+      return;
+    }
     setBusy(true);
+    setStatus(null);
     try {
-      const entry = await api.addFood({ date: selectedDate, meal_type: mealType, food_item_id: foodToAdd.id, grams: amount });
-      setEntries((current) => [...current, entry]); setStatus(`${entry.name} added to ${mealType}.`);
-    } catch { setStatus('Could not add this food.'); } finally { setBusy(false); }
+      const entry = await api.addFood({
+        date: today,
+        meal_type: mealType,
+        food_item_id: foodToAdd.id,
+        grams: amount,
+      });
+      setStatus({
+        text: `Added ${entry.name} (${entry.calories} kcal) to ${mealType}!`,
+        type: 'success',
+      });
+      setSelectedFood(null);
+      setGrams('100');
+    } catch {
+      setStatus({ text: 'Could not add this food. Please try again.', type: 'error' });
+    } finally {
+      setBusy(false);
+    }
   };
-  const saveEdit = async () => {
-    if (!editing) return;
-    const servings = Number(editServings);
-    if (!Number.isFinite(servings) || servings <= 0) { setStatus('Servings must be greater than zero.'); return; }
+
+  const findBarcode = async () => {
+    if (!barcode.trim()) {
+      setStatus({ text: 'Enter a barcode number.', type: 'error' });
+      return;
+    }
+    setScanning(true);
     try {
-      const updated = await api.updateMeal(editing.id, servings);
-      setEntries((current) => current.map((entry) => entry.id === updated.id ? updated : entry)); setEditing(null); setStatus(`${updated.name} updated.`);
-    } catch { setStatus('Could not update this food.'); }
+      const results = await api.getFoods(barcode.trim());
+      if (results.length) {
+        setFoods(results);
+        setSelectedFood(results[0]);
+        setStatus({ text: `Found ${results[0].name}.`, type: 'success' });
+      } else {
+        setStatus({ text: 'No saved food matches that barcode yet — try Manual entry.', type: 'error' });
+      }
+    } catch {
+      setStatus({ text: 'Could not look up that barcode.', type: 'error' });
+    } finally {
+      setScanning(false);
+    }
   };
-  const removeEntry = async (entry: MealEntry) => {
-    if (!window.confirm(`Delete ${entry.name}?`)) return;
-    try { await api.deleteMeal(entry.id); setEntries((current) => current.filter((item) => item.id !== entry.id)); setStatus(`${entry.name} deleted.`); }
-    catch { setStatus('Could not delete this food.'); }
+
+  const submitManual = async () => {
+    if (!manualForm.name.trim()) {
+      setStatus({ text: 'Please enter a food name.', type: 'error' });
+      return;
+    }
+    if (!manualForm.calories.trim() || Number(manualForm.calories) < 0) {
+      setStatus({ text: 'Please enter a valid calorie amount.', type: 'error' });
+      return;
+    }
+    setBusy(true);
+    setStatus(null);
+    try {
+      const entry = await api.addManualMeal({
+        date: today,
+        meal_type: mealType,
+        name: manualForm.name.trim(),
+        calories: Math.max(0, Math.round(Number(manualForm.calories) || 0)),
+        protein_g: Math.max(0, Number(manualForm.protein) || 0),
+        carbs_g: Math.max(0, Number(manualForm.carbs) || 0),
+        fat_g: Math.max(0, Number(manualForm.fat) || 0),
+        sugar_g: Math.max(0, Number(manualForm.sugar) || 0),
+        servings: 1,
+      });
+      setStatus({
+        text: `Added ${entry.name} (${entry.calories} kcal) to ${mealType}!`,
+        type: 'success',
+      });
+      setManualForm({
+        name: '',
+        calories: '',
+        protein: '',
+        carbs: '',
+        fat: '',
+        sugar: '',
+      });
+    } catch {
+      setStatus({ text: 'Could not add manual food. Please check your connection.', type: 'error' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const logActivity = async () => {
+    if (estimatedBurn <= 0) {
+      setStatus({ text: 'Enter minutes greater than zero.', type: 'error' });
+      return;
+    }
+    setBusy(true);
+    setStatus(null);
+    try {
+      await api.logActivity({
+        name: activity,
+        calories_burned: estimatedBurn,
+        duration_minutes: Number(minutes) || undefined,
+        date: today,
+      });
+      setStatus({
+        text: `Logged ${activity} · ${minutes} min · ${estimatedBurn} kcal burned!`,
+        type: 'success',
+      });
+      setMinutes('30');
+      setSteps('0');
+    } catch {
+      setStatus({ text: 'Could not log this activity.', type: 'error' });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return <div className="log-root">
-    <header className="log-navbar"><button type="button" className="log-back-btn" onClick={() => navigate('/dashboard')} aria-label="Back to dashboard"><ChevronLeft size={18} /></button><div className="log-navbar-title"><h1>Food log</h1><p>Everything you eat, in one place</p></div></header>
+    <header className="log-navbar">
+      <button type="button" className="log-back-btn" onClick={() => navigate('/dashboard')} aria-label="Back to dashboard"><ChevronLeft size={18} /></button>
+      <div className="log-brand"><span className="log-brand-mark"><Flame size={17} /></span>Caloria</div>
+      <div className="log-navbar-title"><h1>Log food</h1><p>Search, scan or enter it yourself</p></div>
+      <nav className="log-navlinks" aria-label="Primary">
+        {NAV_LINKS.map((link) => <button key={link.path} type="button" className={`log-navlink${location.pathname === link.path ? ' is-active' : ''}`} onClick={() => navigate(link.path)}>{link.label}</button>)}
+        <button type="button" className="log-navlink-signout" aria-label="Sign out" onClick={() => { logout(); navigate('/login'); }}><LogOut size={16} /></button>
+      </nav>
+    </header>
+
     <main className="log-content">
-      <section className="log-date-bar" aria-label="Selected date"><button type="button" className="log-icon-btn" onClick={() => shiftDate(-1)} aria-label="Previous day"><ChevronLeft size={18} /></button><div><p className="log-date-label">{selectedDate === today ? 'Today' : 'Selected day'}</p><h2>{formatDate(selectedDate)}</h2></div><button type="button" className="log-icon-btn" onClick={() => shiftDate(1)} aria-label="Next day"><ChevronRight size={18} /></button>{selectedDate !== today && <button type="button" className="log-today-btn" onClick={() => setSelectedDate(today)}>Today</button>}</section>
-      <section className="log-total-grid" aria-label="Daily totals">{([['calories', 'Calories', 'kcal'], ['protein', 'Protein', 'g'], ['carbs', 'Carbs', 'g'], ['fat', 'Fat', 'g'], ['sugar', 'Sugar', 'g']] as const).map(([key, label, unit]) => <div className="log-total" key={key}><span>{label}</span><strong>{Math.round(totals[key])}</strong><small>{unit}</small></div>)}</section>
-      {status && <div className="log-status log-status--success" role="status">{status}</div>}
-      <section className="log-add-panel" aria-labelledby="add-food-heading"><div className="log-panel-heading"><div><p className="log-kicker">Add something</p><h2 id="add-food-heading">Build your day</h2></div><Plus size={20} /></div><div className="log-add-controls"><label className="log-field">Meal<select value={mealType} onChange={(event) => setMealType(event.target.value as MealKey)}>{MEALS.map((meal) => <option key={meal.key} value={meal.key}>{meal.label}</option>)}</select></label><label className="log-field">Quantity (g)<input type="number" min="1" value={grams} onChange={(event) => setGrams(event.target.value)} /></label><label className="log-field log-search-field">Search food<div className="log-search-wrap"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Indian foods, fruits, vegetables..." /></div></label></div>{nutritionPreview && selectedFood && (<div className="log-nutrition-preview"><p className="log-preview-label">Nutrition for {selectedFood.name} ({grams}g):</p><div className="log-preview-values"><span>{nutritionPreview.calories} kcal</span><span>P {nutritionPreview.protein}g</span><span>C {nutritionPreview.carbs}g</span><span>F {nutritionPreview.fat}g</span><span>S {nutritionPreview.sugar}g</span></div><button type="button" className="log-add-btn" onClick={() => { selectedFood && addFood(selectedFood); setSelectedFood(null); }} disabled={busy}>Add to {mealType}</button></div>)}<div className={`log-food-results${query.trim() ? ' is-drawer-open' : ''}`} role="listbox" aria-label="Food search results">{foodsLoading ? <p className="log-empty">Loading foods...</p> : foodsError ? <p className="log-empty">Food search is unavailable. Check that the backend is running and you are signed in.</p> : foods.length ? foods.map((food) => <div className="log-food-result" key={food.id} onClick={() => setSelectedFood(food)} style={{cursor: 'pointer'}}><img className="log-food-image" src={foodImage(food)} alt="" loading="lazy" /><span><strong>{food.name}</strong><small>{food.category} · {food.calories_per_100g} kcal · P {food.protein_per_100g}g · C {food.carbs_per_100g}g · F {food.fat_per_100g}g · S {food.sugar_per_100g}g per 100g</small></span><button type="button" className="log-food-plus" onClick={(e) => { e.stopPropagation(); addFood(food); setSelectedFood(null); }} disabled={busy} aria-label={`Add ${food.name} to ${mealType}`}><Plus size={18} /></button></div>) : query.trim() ? <p className="log-empty">No foods found for “{query}”.</p> : null}</div></section>
-      <section className="log-meal-list">{grouped.map((meal) => <article className="log-meal-section" key={meal.key}><div className="log-meal-heading"><div><h2>{meal.label}</h2><span>{meal.entries.reduce((sum, entry) => sum + entry.calories, 0)} kcal</span></div><button type="button" className="log-small-add" onClick={() => { setMealType(meal.key); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><Plus size={15} /> Add food</button></div>{meal.entries.length === 0 ? <p className="log-empty">No foods logged yet.</p> : <div className="log-entry-list">{meal.entries.map((entry) => <div className="log-entry" key={entry.id}><div className="log-entry-main"><strong>{entry.name}</strong><span>{entry.servings.toFixed(2)} serving{entry.servings === 1 ? '' : 's'} · {entry.calories} kcal</span></div><div className="log-entry-macros">P {entry.protein_g.toFixed(1)} · C {entry.carbs_g.toFixed(1)} · F {entry.fat_g.toFixed(1)} · S {entry.sugar_g.toFixed(1)}</div><div className="log-entry-actions"><button type="button" onClick={() => { setEditing(entry); setEditServings(String(entry.servings)); }} aria-label={`Edit ${entry.name}`}><Pencil size={15} /></button><button type="button" onClick={() => removeEntry(entry)} aria-label={`Delete ${entry.name}`}><Trash2 size={15} /></button></div></div>)}</div>}</article>)}</section>
-      {editing && <div className="log-modal-backdrop"><div className="log-modal" role="dialog" aria-modal="true" aria-labelledby="edit-food-heading"><button type="button" className="log-modal-close" onClick={() => setEditing(null)} aria-label="Close"><X size={18} /></button><p className="log-kicker">Edit entry</p><h2 id="edit-food-heading">{editing.name}</h2><p>Change servings to recalculate nutrition totals.</p><label className="log-field">Servings<input type="number" min="0.01" step="0.01" value={editServings} onChange={(event) => setEditServings(event.target.value)} /></label><button type="button" className="log-add-btn log-add-btn--wide" onClick={saveEdit}>Save changes</button></div></div>}
+      <section aria-label="Meal">
+        <p className="log-section-label">Meal</p>
+        <div className="log-meal-tabs">
+          {MEALS.map((meal) => <button key={meal.key} type="button" className={`log-meal-tab${mealType === meal.key ? ' is-active' : ''}`} onClick={() => setMealType(meal.key)}>{meal.label}</button>)}
+        </div>
+      </section>
+
+      <div className="log-subtabs" role="tablist" aria-label="Add food method">
+        <button type="button" role="tab" aria-selected={addMode === 'search'} className={`log-subtab${addMode === 'search' ? ' is-active' : ''}`} onClick={() => setAddMode('search')}><Search size={15} /> Search</button>
+        <button type="button" role="tab" aria-selected={addMode === 'scan'} className={`log-subtab${addMode === 'scan' ? ' is-active' : ''}`} onClick={() => setAddMode('scan')}><ScanLine size={15} /> Scan</button>
+        <button type="button" role="tab" aria-selected={addMode === 'manual'} className={`log-subtab${addMode === 'manual' ? ' is-active' : ''}`} onClick={() => setAddMode('manual')}><SquarePen size={15} /> Manual</button>
+        <button type="button" role="tab" aria-selected={addMode === 'move'} className={`log-subtab${addMode === 'move' ? ' is-active' : ''}`} onClick={() => setAddMode('move')}><Repeat size={15} /> Move</button>
+      </div>
+
+      {status && (
+        <div className={`log-status log-status--${status.type}`} role="status">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <span>{status.text}</span>
+            {status.type === 'success' && (
+              <button
+                type="button"
+                className="log-add-btn"
+                style={{ padding: '6px 14px', fontSize: '13px' }}
+                onClick={() => navigate('/dashboard')}
+              >
+                View on Dashboard &rarr;
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {addMode === 'search' && (
+        <section className="log-panel" aria-labelledby="search-heading">
+          <input
+            id="search-heading"
+            className="log-search-input"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search foods (e.g. chicken breast, apple, dal, salmon, rice)..."
+          />
+          <div className={`log-food-results${query.trim() ? ' is-drawer-open' : ''}`} role="listbox" aria-label="Food search results">
+            {foodsLoading ? <p className="log-empty">Loading foods...</p>
+              : foodsError ? <p className="log-empty">Food search is unavailable. Check that the backend is running and you are signed in.</p>
+              : foods.length ? foods.map((food) => (
+                <div className="log-food-result" key={food.id} onClick={() => setSelectedFood(food)}>
+                  <img className="log-food-image" src={foodImage(food)} alt="" loading="lazy" />
+                  <span><strong>{food.name}</strong><small>{food.category} · {food.calories_per_100g} kcal / 100 g</small></span>
+                  <button type="button" className="log-food-plus" onClick={(e) => { e.stopPropagation(); addFood(food); setSelectedFood(null); }} disabled={busy} aria-label={`Add ${food.name} to ${mealType}`}><Plus size={18} /></button>
+                </div>
+              )) : query.trim() ? <p className="log-empty">No foods found for "{query}".</p> : null}
+          </div>
+          {nutritionPreview && selectedFood && (
+            <div className="log-nutrition-preview">
+              <p className="log-preview-label">Nutrition for {selectedFood.name} ({grams}g):</p>
+              <div className="log-preview-values"><span>{nutritionPreview.calories} kcal</span><span>P {nutritionPreview.protein}g</span><span>C {nutritionPreview.carbs}g</span><span>F {nutritionPreview.fat}g</span><span>S {nutritionPreview.sugar}g</span></div>
+              <label className="log-field" style={{ marginBottom: 10 }}>Quantity (g)<input type="number" min="1" value={grams} onChange={(event) => setGrams(event.target.value)} /></label>
+              <button type="button" className="log-add-btn log-add-btn--wide" onClick={() => { if (selectedFood) { addFood(selectedFood); setSelectedFood(null); } }} disabled={busy}>Add to {mealType}</button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {addMode === 'scan' && (
+        <section className="log-panel" aria-labelledby="scan-heading">
+          <p id="scan-heading" className="log-panel-hint">Type or paste the barcode number printed on the packet. Saved packaged foods show up instantly.</p>
+          <div className="log-scan-row">
+            <input className="log-barcode-input" value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="8901234567890" inputMode="numeric" />
+            <button type="button" className="log-add-btn" onClick={findBarcode} disabled={scanning}>Find</button>
+          </div>
+          {selectedFood && nutritionPreview && (
+            <div className="log-nutrition-preview">
+              <p className="log-preview-label">Nutrition for {selectedFood.name} ({grams}g):</p>
+              <div className="log-preview-values"><span>{nutritionPreview.calories} kcal</span><span>P {nutritionPreview.protein}g</span><span>C {nutritionPreview.carbs}g</span><span>F {nutritionPreview.fat}g</span><span>S {nutritionPreview.sugar}g</span></div>
+              <button type="button" className="log-add-btn log-add-btn--wide" onClick={() => { if (selectedFood) { addFood(selectedFood); setSelectedFood(null); setBarcode(''); } }} disabled={busy}>Add to {mealType}</button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {addMode === 'manual' && (
+        <section className="log-panel" aria-labelledby="manual-heading">
+          <div className="log-manual-form">
+            <label className="log-field">
+              Food name
+              <input
+                id="manual-heading"
+                value={manualForm.name}
+                onChange={(event) => setManualForm({ ...manualForm, name: event.target.value })}
+                placeholder="e.g. Grilled Chicken Salad"
+              />
+            </label>
+
+            <label className="log-field">
+              Calories (kcal)
+              <input
+                type="number"
+                min="0"
+                value={manualForm.calories}
+                onChange={(event) => setManualForm({ ...manualForm, calories: event.target.value })}
+                placeholder="0"
+              />
+            </label>
+
+            <div className="log-macros-header">
+              <span className="log-macros-title">Macronutrients (optional)</span>
+            </div>
+
+            <div className="log-macros-grid">
+              <label className="log-field">
+                Protein (g)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={manualForm.protein}
+                  onChange={(event) => setManualForm({ ...manualForm, protein: event.target.value })}
+                  placeholder="0"
+                />
+              </label>
+              <label className="log-field">
+                Carbs (g)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={manualForm.carbs}
+                  onChange={(event) => setManualForm({ ...manualForm, carbs: event.target.value })}
+                  placeholder="0"
+                />
+              </label>
+              <label className="log-field">
+                Fat (g)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={manualForm.fat}
+                  onChange={(event) => setManualForm({ ...manualForm, fat: event.target.value })}
+                  placeholder="0"
+                />
+              </label>
+              <label className="log-field">
+                Sugar (g)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={manualForm.sugar}
+                  onChange={(event) => setManualForm({ ...manualForm, sugar: event.target.value })}
+                  placeholder="0"
+                />
+              </label>
+            </div>
+            <button type="button" className="log-add-btn log-add-btn--wide" onClick={submitManual} disabled={busy}>Add to {mealType}</button>
+          </div>
+        </section>
+      )}
+
+      {addMode === 'move' && (
+        <section className="log-panel" aria-labelledby="move-heading">
+          <div className="log-move-form">
+            <label className="log-field">Activity<select id="move-heading" value={activity} onChange={(event) => setActivity(event.target.value)}>{ACTIVITIES.map((item) => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label>
+            <div className="log-move-row">
+              <label className="log-field">Minutes<input type="number" min="0" value={minutes} onChange={(event) => setMinutes(event.target.value)} /></label>
+              <label className="log-field">Steps (optional)<input type="number" min="0" value={steps} onChange={(event) => setSteps(event.target.value)} /></label>
+            </div>
+            <div className="log-burn-estimate"><strong>{estimatedBurn} kcal</strong><small>estimated burn at 70 kg body weight</small></div>
+            <button type="button" className="log-add-btn log-add-btn--wide" onClick={logActivity} disabled={busy}>Log activity</button>
+          </div>
+        </section>
+      )}
     </main>
   </div>;
 }
