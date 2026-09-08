@@ -104,23 +104,37 @@ class WaterTodayView(APIView):
 
 
 class WeightTodayView(APIView):
-    """GET/PUT today's weight entry — matches the frontend's single 'Save' button."""
+    """GET/PUT today's weight entry — updates daily weight log and user profile goals."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         log = WeightLog.objects.filter(user=request.user, date=timezone.localdate()).first()
         if log:
             return Response(WeightLogSerializer(log).data)
-        return Response({'date': str(timezone.localdate()), 'weight_kg': None})
+        profile_weight = getattr(request.user.profile, 'weight_kg', None)
+        return Response({'date': str(timezone.localdate()), 'weight_kg': profile_weight})
 
     def put(self, request):
         weight_kg = request.data.get('weight_kg')
         if weight_kg is None:
             return Response({'detail': 'weight_kg is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            weight_kg = float(weight_kg)
+            if weight_kg < 20 or weight_kg > 400:
+                raise ValueError
+        except (TypeError, ValueError):
+            return Response({'detail': 'weight_kg must be between 20 and 400 kg.'}, status=status.HTTP_400_BAD_REQUEST)
         log, _ = WeightLog.objects.update_or_create(
             user=request.user, date=timezone.localdate(),
             defaults={'weight_kg': weight_kg},
         )
+        try:
+            profile = request.user.profile
+            profile.weight_kg = weight_kg
+            profile.recalculate_and_save_goals()
+            profile.save()
+        except Profile.DoesNotExist:
+            pass
         return Response(WeightLogSerializer(log).data)
 
 
@@ -136,7 +150,7 @@ class WeightHistoryView(generics.ListAPIView):
 class TodayDashboardView(APIView):
     """
     Single aggregated GET the frontend calls once on dashboard load.
-    Returns everything DashboardPage.tsx currently hardcodes as placeholder state.
+    Returns calculated goals accurate to weight, height, and age.
     """
     permission_classes = [IsAuthenticated]
 
@@ -158,6 +172,10 @@ class TodayDashboardView(APIView):
                 },
             )
 
+        if not profile.daily_calorie_goal and profile.weight_kg and profile.height_cm and profile.age:
+            profile.recalculate_and_save_goals()
+            profile.save()
+
         meals_qs = MealEntry.objects.filter(user=user, date=selected_date)
         consumed = meals_qs.aggregate(total=Sum('calories'))['total'] or 0
 
@@ -174,7 +192,9 @@ class TodayDashboardView(APIView):
         water = WaterLog.objects.filter(user=user, date=selected_date).first()
         weight = WeightLog.objects.filter(user=user, date=selected_date).first()
 
-        goal = profile.daily_calorie_goal or 0
+        goal = profile.daily_calorie_goal or 2000
+        net = consumed - burned
+        remaining = goal - net
 
         meals_by_type = {}
         for key, _label in MealEntry.MEAL_CHOICES:
@@ -184,16 +204,33 @@ class TodayDashboardView(APIView):
                 'kcal': qs.aggregate(t=Sum('calories'))['t'] or 0,
             }
 
+        profile_summary = {
+            'weight_kg': profile.weight_kg,
+            'height_cm': profile.height_cm,
+            'age': profile.age,
+            'gender': profile.gender,
+            'activity_level': profile.activity_level,
+            'activity_label': profile.get_activity_level_display() if profile.activity_level else 'Sedentary',
+            'goal': profile.goal,
+            'goal_label': profile.get_goal_display() if profile.goal else 'Maintain',
+            'bmr': profile.bmr,
+            'tdee': profile.tdee,
+            'bmi': profile.bmi,
+            'bmi_category': profile.bmi_category,
+        }
+
         return Response({
             'date': selected_date,
             'goal': goal,
             'consumed': consumed,
             'burned': burned,
-            'remaining': max(goal - consumed + burned, 0),
+            'net': net,
+            'remaining': remaining,
             'macros': {'consumed': macros_consumed, 'goal': profile.macro_goals_g},
             'water': {'liters': water.liters if water else 0, 'goal': profile.water_goal_liters},
-            'weight': {'today_kg': weight.weight_kg if weight else None, 'goal_kg': profile.goal_weight_kg},
+            'weight': {'today_kg': weight.weight_kg if weight else profile.weight_kg, 'goal_kg': profile.goal_weight_kg},
             'meals': meals_by_type,
+            'profile_summary': profile_summary,
         })
         # ---- Append to logs/views.py ----
 # (needs added to the existing imports:

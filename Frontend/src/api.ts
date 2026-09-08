@@ -41,16 +41,52 @@ export interface MealEntry {
   food_item_id: number | null;
 }
 
+export interface ProfileSummary {
+  weight_kg: number | null;
+  height_cm: number | null;
+  age: number | null;
+  gender: string | null;
+  activity_level: string | null;
+  activity_label: string | null;
+  goal: string | null;
+  goal_label: string | null;
+  bmr: number | null;
+  tdee: number | null;
+  bmi: number | null;
+  bmi_category: string | null;
+}
+
+export interface UserProfile {
+  goal: string;
+  activity_level: string;
+  gender: string;
+  age: number;
+  height_cm: number;
+  weight_kg: number;
+  goal_weight_kg: number | null;
+  diet_preference: string;
+  onboarding_completed: boolean;
+  daily_calorie_goal: number;
+  macro_goals: { protein: number; carbs: number; fat: number; sugar: number };
+  water_goal: number;
+  bmr: number | null;
+  tdee: number | null;
+  bmi: number | null;
+  bmi_category: string | null;
+}
+
 export interface DashboardData {
   date: string;
   goal: number;
   consumed: number;
   burned: number;
+  net?: number;
   remaining: number;
   macros: { consumed: Record<'protein' | 'carbs' | 'fat' | 'sugar', number>; goal: Record<string, number> };
   water: { liters: number; goal: number };
-  weight: { today_kg: number | null; goal_kg: number };
+  weight: { today_kg: number | null; goal_kg: number | null };
   meals: Record<MealKey, { items: Array<{ id: number; name: string; calories: number }>; kcal: number }>;
+  profile_summary?: ProfileSummary;
 }
 
 export interface AuthTokens {
@@ -62,9 +98,15 @@ function getAccessToken(): string | null {
   return localStorage.getItem('access_token');
 }
 
+function getRefreshToken(): string | null {
+  return localStorage.getItem('refresh_token');
+}
+
 export function setTokens(tokens: AuthTokens): void {
   localStorage.setItem('access_token', tokens.access);
-  localStorage.setItem('refresh_token', tokens.refresh);
+  if (tokens.refresh) {
+    localStorage.setItem('refresh_token', tokens.refresh);
+  }
 }
 
 export function clearTokens(): void {
@@ -72,11 +114,43 @@ export function clearTokens(): void {
   localStorage.removeItem('refresh_token');
 }
 
+let refreshPromise: Promise<string | null> | null = null;
+
+async function attemptTokenRefresh(): Promise<string | null> {
+  const refresh = getRefreshToken();
+  if (!refresh) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+
+    if (!res.ok) {
+      clearTokens();
+      return null;
+    }
+
+    const data = (await res.json()) as { access: string; refresh?: string };
+    if (data.access) {
+      localStorage.setItem('access_token', data.access);
+      if (data.refresh) {
+        localStorage.setItem('refresh_token', data.refresh);
+      }
+      return data.access;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getAccessToken();
+  let token = getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -85,10 +159,27 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
+
+  // If unauthorized and not a token endpoint, attempt silent token refresh and retry
+  if (response.status === 401 && !endpoint.startsWith('/token')) {
+    if (!refreshPromise) {
+      refreshPromise = attemptTokenRefresh().finally(() => {
+        refreshPromise = null;
+      });
+    }
+    const newAccessToken = await refreshPromise;
+    if (newAccessToken) {
+      headers['Authorization'] = `Bearer ${newAccessToken}`;
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    }
+  }
 
   if (!response.ok) {
     let errorData: unknown;
@@ -182,4 +273,25 @@ export const api = {
 
   getDashboard: (date: string): Promise<DashboardData> =>
     request<DashboardData>(`/logs/dashboard/today/?date=${encodeURIComponent(date)}`),
+
+  saveWeight: (weight_kg: number): Promise<{ date: string; weight_kg: number }> =>
+    request<{ date: string; weight_kg: number }>('/logs/weight/today/', {
+      method: 'PUT',
+      body: JSON.stringify({ weight_kg }),
+    }),
+
+  updateWater: (delta: number): Promise<{ liters: number }> =>
+    request<{ liters: number }>('/logs/water/today/', {
+      method: 'PATCH',
+      body: JSON.stringify({ delta }),
+    }),
+
+  getProfile: (): Promise<UserProfile> =>
+    request<UserProfile>('/profile/'),
+
+  updateProfile: (data: Partial<UserProfile>): Promise<UserProfile> =>
+    request<UserProfile>('/profile/', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
 };

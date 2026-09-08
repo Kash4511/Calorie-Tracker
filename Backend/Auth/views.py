@@ -45,9 +45,41 @@ class OnboardingView(APIView):
         if serializer.is_valid():
             serializer.save()
             profile.onboarding_completed = True
+            profile.recalculate_and_save_goals()
             profile.save()
             return Response({
                 'onboarding_completed': True,
-                'profile': serializer.data
+                'profile': ProfileSerializer(profile).data
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProfileView(APIView):
+    """
+    GET /api/profile/ - Retrieve authenticated user's profile with calculated metrics.
+    PATCH/PUT /api/profile/ - Update body stats (weight, height, age, activity, goal)
+                              and automatically recalculate calorie & macro goals.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = request.user.profile
+        if not profile.daily_calorie_goal and profile.weight_kg and profile.height_cm and profile.age:
+            profile.recalculate_and_save_goals()
+            profile.save()
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        profile = request.user.profile
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            profile.recalculate_and_save_goals()
+            profile.save()
+            return Response(ProfileSerializer(profile).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request):
+        return self.patch(request)
+

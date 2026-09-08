@@ -6,13 +6,21 @@ from .models import Profile
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    goal = serializers.ChoiceField(choices=Profile.GOAL_CHOICES)
-    activity_level = serializers.ChoiceField(choices=Profile.ACTIVITY_LEVEL_CHOICES)
-    gender = serializers.ChoiceField(choices=Profile.GENDER_CHOICES)
-    diet_preference = serializers.ChoiceField(choices=Profile.DIET_PREFERENCE_CHOICES)
-    age = serializers.IntegerField(min_value=10, max_value=100)
-    height_cm = serializers.FloatField(min_value=100.0, max_value=250.0)
-    weight_kg = serializers.FloatField(min_value=20.0, max_value=400.0)
+    goal = serializers.ChoiceField(choices=Profile.GOAL_CHOICES, required=False)
+    activity_level = serializers.ChoiceField(choices=Profile.ACTIVITY_LEVEL_CHOICES, required=False)
+    gender = serializers.ChoiceField(choices=Profile.GENDER_CHOICES, required=False)
+    diet_preference = serializers.ChoiceField(choices=Profile.DIET_PREFERENCE_CHOICES, required=False)
+    age = serializers.IntegerField(min_value=10, max_value=100, required=False)
+    height_cm = serializers.FloatField(min_value=100.0, max_value=250.0, required=False)
+    weight_kg = serializers.FloatField(min_value=20.0, max_value=400.0, required=False)
+    goal_weight_kg = serializers.FloatField(min_value=20.0, max_value=400.0, required=False, allow_null=True)
+    daily_calorie_goal = serializers.IntegerField(read_only=True)
+    macro_goals = serializers.ReadOnlyField(source='macro_goals_g')
+    water_goal = serializers.ReadOnlyField(source='water_goal_liters')
+    bmr = serializers.ReadOnlyField()
+    tdee = serializers.ReadOnlyField()
+    bmi = serializers.ReadOnlyField()
+    bmi_category = serializers.ReadOnlyField()
 
     class Meta:
         model = Profile
@@ -23,7 +31,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             'age',
             'height_cm',
             'weight_kg',
+            'goal_weight_kg',
             'diet_preference',
+            'onboarding_completed',
+            'daily_calorie_goal',
+            'macro_goals',
+            'water_goal',
+            'bmr',
+            'tdee',
+            'bmi',
+            'bmi_category',
         ]
 
 
