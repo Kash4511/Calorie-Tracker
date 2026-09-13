@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Auth',
     'logs',
-    'Dash'
+    'Dash',
+    'Prog'
 ]
 
 MIDDLEWARE = [

@@ -5,6 +5,9 @@ import RegisterPage from './RegisterPage';
 import OnboardingPage from './OnboardingPage';
 import DashboardPage from './DashboardPage';
 import LogPage from './LogPage';
+import ProgressPage from './ProgressPage';
+import SettingsPage from './SettingsPage';
+import { ThemeProvider } from './ThemeContext';
 import './App.css';
 
 function LandingPage() {
@@ -177,8 +180,10 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      <Route path="/progress" element={<ProgressPage />} />
+      <Route path="/log" element={<LogPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-      <Route path="/log" element={<LogPage/>} />
     </Routes>
   );
 }
@@ -186,9 +191,11 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

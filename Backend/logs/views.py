@@ -15,6 +15,7 @@ from .serializers import (
     WaterLogSerializer, WeightLogSerializer,
     FoodItemSerializer,
 )
+from .badges import get_user_badges_and_streak
 
 
 class MealEntryListCreateView(generics.ListCreateAPIView):
@@ -219,6 +220,8 @@ class TodayDashboardView(APIView):
             'bmi_category': profile.bmi_category,
         }
 
+        streak_info = get_user_badges_and_streak(user)
+
         return Response({
             'date': selected_date,
             'goal': goal,
@@ -231,7 +234,17 @@ class TodayDashboardView(APIView):
             'weight': {'today_kg': weight.weight_kg if weight else profile.weight_kg, 'goal_kg': profile.goal_weight_kg},
             'meals': meals_by_type,
             'profile_summary': profile_summary,
+            'streak': streak_info['streak'],
+            'badges': streak_info['badges'],
         })
+
+
+class BadgesView(APIView):
+    """GET /api/logs/badges/ — returns user streak and all earned/unearned badges."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(get_user_badges_and_streak(request.user))
         # ---- Append to logs/views.py ----
 # (needs added to the existing imports:
 #    from .models import FoodItem   (add to the existing MealEntry, ActivityEntry... line)

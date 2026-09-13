@@ -394,3 +394,55 @@
     grid-template-columns: 1fr;
   }
 }
+/* Dark Mode Support for Log Page */
+[data-theme='dark'] .log-root,
+html[data-theme='dark'] .log-root {
+  --cal-bg: #090d16;
+  --cal-surface: #111827;
+  --cal-ink-900: #f9fafb;
+  --cal-ink-500: #94a3b8;
+  --cal-border: #1e293b;
+  --cal-track: #1e293b;
+  --cal-accent: #10b981;
+  --cal-accent-soft: rgba(16, 185, 129, 0.16);
+  --cal-accent-hover: #059669;
+  --cal-success: #10b981;
+  --cal-success-soft: rgba(16, 185, 129, 0.16);
+  --cal-success-hover: #059669;
+  --cal-primary: #f9fafb;
+
+  color-scheme: dark;
+}
+[data-theme='dark'] .log-back-btn,
+[data-theme='dark'] .log-meal-tab,
+[data-theme='dark'] .log-panel,
+[data-theme='dark'] .log-food-result,
+[data-theme='dark'] .log-navlink-signout,
+[data-theme='dark'] .log-search-input,
+[data-theme='dark'] .log-barcode-input,
+[data-theme='dark'] .log-field input,
+[data-theme='dark'] .log-field select {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #1e293b;
+}
+[data-theme='dark'] .log-subtab.is-active {
+  background: #1e293b;
+  color: #f9fafb;
+}
+[data-theme='dark'] .log-nutrition-preview {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+[data-theme='dark'] .log-preview-label {
+  color: #f9fafb;
+}
+[data-theme='dark'] .log-preview-values span {
+  background: #111827;
+  color: #f9fafb;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+[data-theme='dark'] .log-burn-estimate {
+  background: #111827;
+  border: 1px solid #1e293b;
+}

@@ -41,6 +41,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             'tdee',
             'bmi',
             'bmi_category',
+            'current_streak',
+            'longest_streak',
+            'theme_preference',
         ]
 
 

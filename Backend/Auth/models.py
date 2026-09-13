@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+from datetime import timedelta
 
 
 class Profile(models.Model):
@@ -53,8 +55,40 @@ class Profile(models.Model):
     fat_pct = models.FloatField(default=0.30)
     sugar_goal_g = models.PositiveIntegerField(default=50)  # WHO guideline default, not derived
 
+    # ---- Streak & Consistency ----
+    current_streak = models.PositiveIntegerField(default=0)
+    longest_streak = models.PositiveIntegerField(default=0)
+    last_active_date = models.DateField(null=True, blank=True)
+    theme_preference = models.CharField(max_length=10, default='system')
+
     def __str__(self):
         return f'{self.user.username} Profile'
+
+    def update_streak(self):
+        today = timezone.localdate()
+        if self.last_active_date == today:
+            return self.current_streak
+
+        from logs.models import MealEntry
+        yesterday = today - timedelta(days=1)
+
+        if self.last_active_date == yesterday:
+            self.current_streak = (self.current_streak or 0) + 1
+        elif self.last_active_date is None:
+            self.current_streak = 1
+        else:
+            had_yesterday_activity = MealEntry.objects.filter(user=self.user, date=yesterday).exists()
+            if had_yesterday_activity:
+                self.current_streak = (self.current_streak or 0) + 1
+            else:
+                self.current_streak = 1
+
+        if self.current_streak > (self.longest_streak or 0):
+            self.longest_streak = self.current_streak
+
+        self.last_active_date = today
+        self.save(update_fields=['current_streak', 'longest_streak', 'last_active_date'])
+        return self.current_streak
 
     @property
     def bmi(self):

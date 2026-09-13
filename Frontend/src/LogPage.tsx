@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Flame, LogOut, Plus, Repeat, ScanLine, Search, SquarePen } from 'lucide-react';
+import { ChevronLeft, Flame, LogOut, Plus, Repeat, ScanLine, Search, SquarePen, Sun, Moon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api, type FoodItem, type MealKey } from './api';
 import { useAuth } from './AuthContext';
+import { useTheme } from './ThemeContext';
 import './log.css';
 
 const MEALS: Array<{ key: MealKey; label: string }> = [
@@ -12,7 +13,7 @@ const MEALS: Array<{ key: MealKey; label: string }> = [
 const NAV_LINKS = [
   { path: '/dashboard', label: 'Today' },
   { path: '/log', label: 'Log' },
-  { path: '/foods', label: 'Foods' },
+  { path: '/log?mode=search', label: 'Foods' },
   { path: '/progress', label: 'Progress' },
   { path: '/settings', label: 'Settings' },
 ];
@@ -31,6 +32,7 @@ export default function LogPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, logout, loading: authLoading } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const today = useMemo(() => isoDate(new Date()), []);
 
   const queryMeal = useMemo(() => {
@@ -258,6 +260,16 @@ export default function LogPage() {
       <div className="log-navbar-title"><h1>Log food</h1><p>Search, scan or enter it yourself</p></div>
       <nav className="log-navlinks" aria-label="Primary">
         {NAV_LINKS.map((link) => <button key={link.path} type="button" className={`log-navlink${location.pathname === link.path ? ' is-active' : ''}`} onClick={() => navigate(link.path)}>{link.label}</button>)}
+        <button
+          type="button"
+          className="cal-theme-toggle-btn"
+          onClick={toggleTheme}
+          title={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode`}
+          aria-label={`Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode`}
+          style={{ width: 34, height: 34, borderRadius: '50%', border: '1px solid var(--cal-border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', cursor: 'pointer', color: 'var(--cal-ink-500)' }}
+        >
+          {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
         <button type="button" className="log-navlink-signout" aria-label="Sign out" onClick={() => { logout(); navigate('/login'); }}><LogOut size={16} /></button>
       </nav>
     </header>

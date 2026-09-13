@@ -10,10 +10,12 @@ from .views import (
     TodayDashboardView,
     FoodSearchView,
     MealEntryFromFoodView,
+    BadgesView,
 )
 
 urlpatterns = [
     path('dashboard/today/', TodayDashboardView.as_view(), name='dashboard-today'),
+    path('badges/', BadgesView.as_view(), name='badges'),
     path('foods/', FoodSearchView.as_view(), name='food-search'),
     path('meals/from-food/', MealEntryFromFoodView.as_view(), name='meal-from-food'),
     path('meals/', MealEntryListCreateView.as_view(), name='meal-list-create'),

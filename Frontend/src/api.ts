@@ -75,6 +75,85 @@ export interface UserProfile {
   bmi_category: string | null;
 }
 
+export interface StreakData {
+  current_streak: number;
+  longest_streak: number;
+  last_active_date: string | null;
+  active_days_week: boolean[];
+  unlocked_badges_count?: number;
+  total_badges_count?: number;
+}
+
+export interface BadgeItem {
+  id: string;
+  title: string;
+  description: string;
+  category: 'login' | 'logging' | 'goals';
+  icon: string;
+  unlocked: boolean;
+  progress: number;
+  max_progress: number;
+}
+
+export interface WeightPeriodProgress {
+  change_kg: number | null;
+  status: 'lost' | 'gained' | 'maintained' | 'insufficient_data';
+  baseline_kg: number | null;
+  current_kg: number | null;
+  days_span: number;
+  formatted: string;
+}
+
+export interface TotalWeightProgress {
+  change_kg: number;
+  status: 'lost' | 'gained' | 'maintained';
+  start_kg: number | null;
+  current_kg: number | null;
+  goal_kg: number | null;
+}
+
+export interface DailyCalorieEntry {
+  date: string;
+  calories: number;
+  burned: number;
+  net: number;
+  target: number;
+}
+
+export interface WeightTrendEntry {
+  date: string;
+  weight_kg: number;
+  target_kg?: number | null;
+}
+
+export interface ProgressResponse {
+  range_days: number;
+  logged_days_count: number;
+  consistency_pct: number;
+  avg_calories: number;
+  calorie_target: number;
+  total_burned: number;
+  avg_burned: number;
+  avg_protein_g: number;
+  protein_target_g: number;
+  avg_carbs_g: number;
+  carbs_target_g: number;
+  avg_fat_g: number;
+  fat_target_g: number;
+  avg_water_liters: number;
+  water_target_liters: number;
+  current_weight_kg: number | null;
+  start_weight_kg: number | null;
+  goal_weight_kg: number | null;
+  remaining_to_goal_kg: number | null;
+  week_progress: WeightPeriodProgress;
+  month_progress: WeightPeriodProgress;
+  total_progress: TotalWeightProgress;
+  weight_change_kg: number | null;
+  daily_calories: DailyCalorieEntry[];
+  weight_trend: WeightTrendEntry[];
+}
+
 export interface DashboardData {
   date: string;
   goal: number;
@@ -87,6 +166,8 @@ export interface DashboardData {
   weight: { today_kg: number | null; goal_kg: number | null };
   meals: Record<MealKey, { items: Array<{ id: number; name: string; calories: number }>; kcal: number }>;
   profile_summary?: ProfileSummary;
+  streak?: StreakData;
+  badges?: BadgeItem[];
 }
 
 export interface AuthTokens {
@@ -294,4 +375,10 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+
+  getProgress: (days = 14): Promise<ProgressResponse> =>
+    request<ProgressResponse>(`/progress/?days=${days}`),
+
+  getBadges: (): Promise<{ streak: StreakData; badges: BadgeItem[] }> =>
+    request<{ streak: StreakData; badges: BadgeItem[] }>('/logs/badges/'),
 };
