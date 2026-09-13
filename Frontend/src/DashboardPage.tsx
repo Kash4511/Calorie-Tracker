@@ -15,8 +15,8 @@ import {
   Sun,
   Moon,
   Trophy,
-  Lock,
-  Award,
+  Lock
+  
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
