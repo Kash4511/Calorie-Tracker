@@ -72,6 +72,19 @@ class ProfileView(APIView):
 
     def patch(self, request):
         profile = request.user.profile
+        if 'name' in request.data:
+            name_val = str(request.data['name']).strip()
+            parts = name_val.split(' ', 1)
+            request.user.first_name = parts[0]
+            request.user.last_name = parts[1] if len(parts) > 1 else ''
+            request.user.save()
+        if 'first_name' in request.data:
+            request.user.first_name = str(request.data['first_name']).strip()
+            request.user.save()
+        if 'last_name' in request.data:
+            request.user.last_name = str(request.data['last_name']).strip()
+            request.user.save()
+
         serializer = ProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()

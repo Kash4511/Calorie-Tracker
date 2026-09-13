@@ -1,7 +1,67 @@
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from .models import MealEntry, ActivityEntry, WaterLog, WeightLog
+
+
+def get_user_activity_history(user, profile, current_streak, days=365):
+    today = timezone.localdate()
+    start_date = today - timedelta(days=days)
+    activity_map = {}
+
+    meals_qs = MealEntry.objects.filter(user=user, date__gte=start_date).values('date').annotate(
+        m_count=Count('id'), total_cals=Sum('calories')
+    )
+    for row in meals_qs:
+        d_str = str(row['date'])
+        item = activity_map.setdefault(d_str, {'count': 0, 'meals': 0, 'calories': 0, 'water': 0.0, 'workouts': 0, 'level': 0})
+        item['meals'] = row['m_count']
+        item['calories'] = row['total_cals'] or 0
+        item['count'] += row['m_count']
+
+    water_qs = WaterLog.objects.filter(user=user, date__gte=start_date, liters__gt=0).values('date', 'liters')
+    for row in water_qs:
+        d_str = str(row['date'])
+        item = activity_map.setdefault(d_str, {'count': 0, 'meals': 0, 'calories': 0, 'water': 0.0, 'workouts': 0, 'level': 0})
+        item['water'] = row['liters'] or 0.0
+        item['count'] += 1
+
+    act_qs = ActivityEntry.objects.filter(user=user, date__gte=start_date).values('date').annotate(w_count=Count('id'))
+    for row in act_qs:
+        d_str = str(row['date'])
+        item = activity_map.setdefault(d_str, {'count': 0, 'meals': 0, 'calories': 0, 'water': 0.0, 'workouts': 0, 'level': 0})
+        item['workouts'] = row['w_count']
+        item['count'] += row['w_count']
+
+    weight_qs = WeightLog.objects.filter(user=user, date__gte=start_date).values('date')
+    for row in weight_qs:
+        d_str = str(row['date'])
+        item = activity_map.setdefault(d_str, {'count': 0, 'meals': 0, 'calories': 0, 'water': 0.0, 'workouts': 0, 'level': 0})
+        item['count'] += 1
+
+    if current_streak > 0 and profile.last_active_date:
+        for offset in range(current_streak):
+            streak_d = profile.last_active_date - timedelta(days=offset)
+            if streak_d >= start_date:
+                s_str = str(streak_d)
+                s_item = activity_map.setdefault(s_str, {'count': 1, 'meals': 0, 'calories': 0, 'water': 0.0, 'workouts': 0, 'level': 1})
+                if s_item['count'] == 0:
+                    s_item['count'] = 1
+
+    for item in activity_map.values():
+        c = item['count']
+        if c <= 0:
+            item['level'] = 0
+        elif c == 1:
+            item['level'] = 1
+        elif c == 2:
+            item['level'] = 2
+        elif c in (3, 4):
+            item['level'] = 3
+        else:
+            item['level'] = 4
+
+    return activity_map
 
 
 def get_user_badges_and_streak(user):
@@ -231,6 +291,8 @@ def get_user_badges_and_streak(user):
     ]
 
     unlocked_count = sum(1 for b in badges if b['unlocked'])
+    activity_history = get_user_activity_history(user, profile, current_streak, days=365)
+    total_active_days = sum(1 for v in activity_history.values() if v.get('level', 0) > 0)
 
     return {
         'streak': {
@@ -240,6 +302,8 @@ def get_user_badges_and_streak(user):
             'active_days_week': active_days_week,
             'unlocked_badges_count': unlocked_count,
             'total_badges_count': len(badges),
+            'activity_history': activity_history,
+            'total_active_days': total_active_days,
         },
         'badges': badges,
     }

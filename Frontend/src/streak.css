@@ -1,0 +1,709 @@
+/* ===========================================================
+   Login Streak & GitHub/LeetCode Contribution Heatmap Styles
+   =========================================================== */
+
+/* Clickable Streak Card on Dashboard */
+.cal-streak-card.is-clickable {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  position: relative;
+}
+
+.cal-streak-card.is-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.18);
+  border-color: #f59e0b;
+}
+
+.cal-streak-action-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--cal-radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  color: #b45309;
+  transition: all 0.15s ease;
+}
+
+[data-theme='dark'] .cal-streak-action-hint {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.cal-streak-card.is-clickable:hover .cal-streak-action-hint {
+  background: #f59e0b;
+  color: #ffffff;
+  border-color: #f59e0b;
+}
+
+/* Modal Popup Backdrop & Dialog */
+.cal-streak-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: calModalFadeIn 0.2s ease-out;
+}
+
+@keyframes calModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cal-streak-modal-dialog {
+  background: var(--cal-bg);
+  border: 1.5px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 1060px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: calModalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes calModalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cal-streak-modal-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--cal-border);
+  background: var(--cal-card-bg);
+  flex-shrink: 0;
+}
+
+.cal-streak-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cal-streak-modal-title {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cal-ink);
+  margin: 0;
+}
+
+.cal-streak-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-streak-fullscreen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--cal-radius-pill);
+  background: var(--cal-pill-bg);
+  border: 1px solid var(--cal-border);
+  color: var(--cal-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.cal-streak-fullscreen-btn:hover {
+  background: #f59e0b;
+  color: #ffffff;
+  border-color: #f59e0b;
+}
+
+.cal-streak-modal-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--cal-border);
+  background: var(--cal-card-bg);
+  color: var(--cal-ink-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cal-streak-modal-close:hover {
+  background: var(--cal-pill-bg);
+  color: var(--cal-ink);
+  border-color: var(--cal-ink-muted);
+}
+
+.cal-streak-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===========================================================
+   Heatmap Card (GitHub / LeetCode Activity Matrix)
+   =========================================================== */
+.cal-heatmap-card {
+  background: var(--cal-card-bg);
+  border: 1.5px solid var(--cal-border);
+  border-radius: var(--cal-radius-lg);
+  padding: 24px;
+  box-shadow: var(--cal-shadow-sm);
+}
+
+.cal-heatmap-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.cal-heatmap-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cal-heatmap-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-heatmap-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cal-ink);
+  margin: 0;
+}
+
+.cal-heatmap-subtitle {
+  font-size: 13.5px;
+  color: var(--cal-ink-muted);
+  margin: 0;
+}
+
+.cal-heatmap-range-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--cal-pill-bg);
+  padding: 4px;
+  border-radius: var(--cal-radius-pill);
+  border: 1px solid var(--cal-border);
+}
+
+.cal-heatmap-range-btn {
+  padding: 6px 14px;
+  border-radius: var(--cal-radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--cal-ink-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cal-heatmap-range-btn.is-active {
+  background: var(--cal-card-bg);
+  color: var(--cal-ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Heatmap Grid & Scroll Container */
+.cal-heatmap-scroll-wrap {
+  position: relative;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cal-heatmap-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: max-content;
+}
+
+.cal-heatmap-months-row {
+  display: flex;
+  margin-left: 32px; /* aligns with day label column width */
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cal-ink-muted);
+  height: 18px;
+}
+
+.cal-heatmap-month-label {
+  position: absolute;
+  white-space: nowrap;
+}
+
+.cal-heatmap-grid-area {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cal-heatmap-weekday-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 26px;
+  height: 102px; /* 7 cells (12px) + 6 gaps (3px) = 102px */
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--cal-ink-muted);
+  padding-top: 2px;
+  user-select: none;
+}
+
+.cal-heatmap-weeks-track {
+  display: flex;
+  gap: 3.5px;
+}
+
+.cal-heatmap-week-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3.5px;
+}
+
+.cal-heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2.5px;
+  cursor: pointer;
+  transition: transform 0.1s ease, outline 0.1s ease;
+  position: relative;
+}
+
+.cal-heatmap-cell:hover {
+  transform: scale(1.35);
+  z-index: 5;
+  outline: 1.5px solid var(--cal-ink);
+}
+
+/* GitHub & LeetCode Green Palette (Light Mode) */
+.cal-heatmap-cell.level-0 {
+  background: #ebedf0;
+  border: 1px solid rgba(27, 31, 36, 0.06);
+}
+
+.cal-heatmap-cell.level-1 {
+  background: #9be9a8;
+  border: 1px solid rgba(27, 31, 36, 0.08);
+}
+
+.cal-heatmap-cell.level-2 {
+  background: #40c463;
+  border: 1px solid rgba(27, 31, 36, 0.08);
+}
+
+.cal-heatmap-cell.level-3 {
+  background: #30a14e;
+  border: 1px solid rgba(27, 31, 36, 0.08);
+}
+
+.cal-heatmap-cell.level-4 {
+  background: #216e39;
+  border: 1px solid rgba(27, 31, 36, 0.08);
+}
+
+/* GitHub & LeetCode Green Palette (Dark Mode) */
+[data-theme='dark'] .cal-heatmap-cell.level-0 {
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .cal-heatmap-cell.level-1 {
+  background: #0e4429;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .cal-heatmap-cell.level-2 {
+  background: #006d32;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .cal-heatmap-cell.level-3 {
+  background: #26a641;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .cal-heatmap-cell.level-4 {
+  background: #39d353;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cal-heatmap-cell.is-future {
+  opacity: 0.15;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Heatmap Footer: Stats & Legend */
+.cal-heatmap-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--cal-border);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cal-heatmap-summary-text {
+  font-size: 13px;
+  color: var(--cal-ink-muted);
+}
+
+.cal-heatmap-summary-text strong {
+  color: var(--cal-ink);
+}
+
+.cal-heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--cal-ink-muted);
+}
+
+.cal-heatmap-legend-cells {
+  display: flex;
+  gap: 3px;
+}
+
+.cal-heatmap-legend-cell {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+/* Interactive Heatmap Tooltip */
+.cal-heatmap-tooltip-card {
+  margin-top: 12px;
+  padding: 10px 16px;
+  border-radius: var(--cal-radius-sm);
+  background: var(--cal-pill-bg);
+  border: 1px solid var(--cal-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.cal-heatmap-tooltip-date {
+  font-weight: 700;
+  color: var(--cal-ink);
+}
+
+.cal-heatmap-tooltip-desc {
+  color: var(--cal-ink-muted);
+}
+
+.cal-heatmap-tooltip-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--cal-radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cal-heatmap-tooltip-tag.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+
+.cal-heatmap-tooltip-tag.inactive {
+  background: var(--cal-border);
+  color: var(--cal-ink-muted);
+}
+
+/* Stats Pill Row in Streak View */
+.cal-streak-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.cal-streak-stat-card {
+  background: var(--cal-card-bg);
+  border: 1.5px solid var(--cal-border);
+  border-radius: var(--cal-radius-md);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cal-streak-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--cal-pill-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.cal-streak-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-streak-stat-number {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cal-ink);
+}
+
+.cal-streak-stat-label {
+  font-size: 12px;
+  color: var(--cal-ink-muted);
+  font-weight: 500;
+}
+
+/* ===========================================================
+   Settings Page: Avatar & Photo Upload Styles
+   =========================================================== */
+.cal-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--cal-border);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.cal-avatar-preview-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 3px solid #f59e0b;
+}
+
+.cal-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.cal-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: 800;
+  font-family: var(--font-serif);
+  text-transform: uppercase;
+}
+
+.cal-avatar-upload-icon-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--cal-card-bg);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.cal-avatar-upload-icon-overlay:hover {
+  transform: scale(1.1);
+}
+
+.cal-avatar-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.cal-avatar-btns-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cal-avatar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: var(--cal-primary);
+  color: #ffffff;
+  border-radius: var(--cal-radius-sm);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s ease;
+}
+
+.cal-avatar-upload-btn:hover {
+  opacity: 0.9;
+}
+
+.cal-avatar-remove-btn {
+  padding: 9px 16px;
+  background: var(--cal-pill-bg);
+  border: 1px solid var(--cal-border);
+  color: var(--cal-ink-muted);
+  border-radius: var(--cal-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cal-avatar-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.cal-avatar-presets-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cal-ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.cal-avatar-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cal-avatar-preset-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cal-border);
+  background: var(--cal-pill-bg);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.cal-avatar-preset-btn:hover {
+  transform: scale(1.15);
+  border-color: #f59e0b;
+}
+
+/* Light / Dark Mode Toggle Switch in Settings */
+.cal-theme-toggle-switch-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: var(--cal-card-bg);
+  border: 1.5px solid var(--cal-border);
+  border-radius: var(--cal-radius-md);
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cal-theme-switch-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--cal-pill-bg);
+  padding: 5px 8px;
+  border-radius: var(--cal-radius-pill);
+  border: 1px solid var(--cal-border);
+}
+
+.cal-theme-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--cal-radius-pill);
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--cal-ink-muted);
+  transition: all 0.2s ease;
+}
+
+.cal-theme-pill-btn.is-active {
+  background: var(--cal-card-bg);
+  color: var(--cal-ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.cal-nav-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #f59e0b;
+}

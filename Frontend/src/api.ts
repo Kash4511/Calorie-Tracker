@@ -57,6 +57,12 @@ export interface ProfileSummary {
 }
 
 export interface UserProfile {
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  email?: string;
+  profile_photo?: string | null;
   goal: string;
   activity_level: string;
   gender: string;
@@ -73,6 +79,18 @@ export interface UserProfile {
   tdee: number | null;
   bmi: number | null;
   bmi_category: string | null;
+  current_streak?: number;
+  longest_streak?: number;
+  theme_preference?: string;
+}
+
+export interface ActivityDayInfo {
+  count: number;
+  meals: number;
+  calories: number;
+  water: number;
+  workouts: number;
+  level: number; // 0: none, 1: low, 2: medium, 3: high, 4: very high
 }
 
 export interface StreakData {
@@ -82,6 +100,8 @@ export interface StreakData {
   active_days_week: boolean[];
   unlocked_badges_count?: number;
   total_badges_count?: number;
+  activity_history?: Record<string, ActivityDayInfo>;
+  total_active_days?: number;
 }
 
 export interface BadgeItem {

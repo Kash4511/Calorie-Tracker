@@ -14,15 +14,14 @@ import {
   Zap,
   Sun,
   Moon,
-  Trophy,
-  Lock
-  
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { api, type DashboardData, type BadgeItem } from './api';
 import { useTheme } from './ThemeContext';
+import StreakModal from './StreakModal';
 import './dashboard.css';
+import './streak.css';
 
 type MacroKey = 'protein' | 'carbs' | 'fat' | 'sugar';
 type MealKey = 'breakfast' | 'lunch' | 'snacks' | 'dinner';
@@ -41,7 +40,7 @@ interface MealSection {
   items: string[]; // meal item names, empty = "Nothing logged yet."
 }
 
-const NAV_TABS = ['Today', 'Log', 'Foods', 'Progress', 'Settings'] as const;
+const NAV_TABS = ['Today', 'Log', 'Progress', 'Settings'] as const;
 
 function useGreeting() {
   return useMemo(() => {
@@ -75,7 +74,7 @@ export default function DashboardPage() {
   const [ready, setReady] = useState(false);
   const [activeTab, setActiveTab] = useState<(typeof NAV_TABS)[number]>('Today');
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-  const [badgeCategory, setBadgeCategory] = useState<'all' | 'login' | 'logging' | 'goals'>('all');
+  const [streakModalOpen, setStreakModalOpen] = useState(false);
   const dashboardDate = useTodayIso();
 
   useEffect(() => {
@@ -114,10 +113,6 @@ export default function DashboardPage() {
 
   const streak = dashboard?.streak;
   const allBadges: BadgeItem[] = useMemo(() => dashboard?.badges ?? [], [dashboard?.badges]);
-  const filteredBadges = useMemo(() => {
-    if (badgeCategory === 'all') return allBadges;
-    return allBadges.filter((b) => b.category === badgeCategory);
-  }, [allBadges, badgeCategory]);
   const unlockedBadgesCount = useMemo(
     () => allBadges.filter((b) => b.unlocked).length,
     [allBadges]
@@ -330,7 +325,7 @@ export default function DashboardPage() {
 
   if (!ready) return null;
 
-  const displayName = user?.username || user?.email?.split('@')[0] || 'there';
+  const displayName = user?.first_name || user?.name || user?.username || user?.email?.split('@')[0] || 'there';
 
   const handleSaveWeight = async () => {
     const parsed = parseFloat(weightInput);
@@ -367,11 +362,16 @@ return (
           <span className="cal-logo-text">Caloria</span>
         </div>
 
-        <div className="cal-nav-greeting">
-          <p className="cal-nav-name">
-            {greeting}, {displayName}
-          </p>
-          <p className="cal-nav-date">{today}</p>
+        <div className="cal-nav-greeting" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {user?.profile_photo && (
+            <img src={user.profile_photo} alt={displayName} className="cal-nav-avatar" />
+          )}
+          <div>
+            <p className="cal-nav-name">
+              {greeting}, {displayName}
+            </p>
+            <p className="cal-nav-date">{today}</p>
+          </div>
         </div>
 
         <nav className="cal-nav-tabs" aria-label="Primary">
@@ -384,7 +384,6 @@ return (
                 setActiveTab(tab);
                 if (tab === 'Today') navigate('/dashboard');
                 if (tab === 'Log') navigate('/log');
-                if (tab === 'Foods') navigate('/log?mode=search');
                 if (tab === 'Progress') navigate('/progress');
                 if (tab === 'Settings') navigate('/settings');
               }}
@@ -418,8 +417,21 @@ return (
       </header>
 
       <main id="cal-main" className="cal-content" tabIndex={-1}>
-        {/* ---- Consistency & Login Streak Card ---- */}
-        <section className="cal-streak-card" aria-label="Login Streak & Consistency">
+        {/* ---- Consistency & Login Streak Card (Clickable to open pop-up) ---- */}
+        <section
+          className="cal-streak-card is-clickable"
+          aria-label="Login Streak & Consistency"
+          role="button"
+          tabIndex={0}
+          onClick={() => setStreakModalOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setStreakModalOpen(true);
+            }
+          }}
+          title="Click to view your login streak activity heatmap and badges"
+        >
           <div className="cal-streak-main">
             <div className="cal-streak-flame-wrap">
               <div className="cal-streak-flame-circle">
@@ -446,6 +458,10 @@ return (
               <div className="cal-streak-best-pill">
                 <span className="cal-streak-best-lbl">Badges Earned</span>
                 <span className="cal-streak-best-val">🏆 {unlockedBadgesCount} / {allBadges.length || 17}</span>
+              </div>
+              <div className="cal-streak-action-hint">
+                <span>Heatmap &amp; Badges</span>
+                <span aria-hidden="true">&rarr;</span>
               </div>
             </div>
           </div>
@@ -745,89 +761,6 @@ return (
             </div>
           ))}
         </section>
-
-        {/* ---- Consistency Badges & Achievements Showcase ---- */}
-        <section className="cal-badges-section" aria-labelledby="badges-heading">
-          <div className="cal-badges-header">
-            <div className="cal-badges-header-left">
-              <div className="cal-badges-title-wrap">
-                <Trophy size={20} className="cal-badges-trophy" />
-                <h2 id="badges-heading" className="cal-badges-title">Consistency Badges &amp; Milestones</h2>
-              </div>
-              <p className="cal-badges-subtitle">
-                Complete daily login streaks, log meals &amp; workouts, and reach your targets to earn achievement badges.
-              </p>
-            </div>
-            <div className="cal-badges-count-pill">
-              <strong>{unlockedBadgesCount}</strong> of <strong>{allBadges.length || 17}</strong> Badges Earned
-            </div>
-          </div>
-
-          {/* Category Filter Tabs */}
-          <div className="cal-badges-tabs" role="tablist">
-            {(['all', 'login', 'logging', 'goals'] as const).map((cat) => {
-              const label =
-                cat === 'all'
-                  ? `All (${allBadges.length})`
-                  : cat === 'login'
-                  ? `Login Streaks (${allBadges.filter((b) => b.category === 'login').length})`
-                  : cat === 'logging'
-                  ? `Adding Logs (${allBadges.filter((b) => b.category === 'logging').length})`
-                  : `Meeting Goals (${allBadges.filter((b) => b.category === 'goals').length})`;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  className={`cal-badge-tab${badgeCategory === cat ? ' is-active' : ''}`}
-                  onClick={() => setBadgeCategory(cat)}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Badges Grid */}
-          <div className="cal-badges-grid">
-            {filteredBadges.map((badge) => (
-              <div
-                key={badge.id}
-                className={`cal-badge-card${badge.unlocked ? ' is-unlocked' : ' is-locked'}`}
-              >
-                <div className="cal-badge-card-icon-wrap">
-                  <span className="cal-badge-emoji">{badge.icon}</span>
-                  {badge.unlocked ? (
-                    <span className="cal-badge-check-icon" title="Unlocked!">✓</span>
-                  ) : (
-                    <span className="cal-badge-lock-icon" title="In Progress">
-                      <Lock size={12} />
-                    </span>
-                  )}
-                </div>
-                <div className="cal-badge-card-body">
-                  <div className="cal-badge-title-row">
-                    <h4 className="cal-badge-card-title">{badge.title}</h4>
-                    {badge.unlocked && <span className="cal-badge-unlocked-tag">Earned</span>}
-                  </div>
-                  <p className="cal-badge-card-desc">{badge.description}</p>
-                  <div className="cal-badge-card-progress">
-                    <div className="cal-badge-bar-track">
-                      <div
-                        className="cal-badge-bar-fill"
-                        style={{
-                          width: `${Math.min(100, Math.round((badge.progress / badge.max_progress) * 100))}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="cal-badge-progress-text">
-                      {badge.unlocked ? 'Unlocked' : `${badge.progress} / ${badge.max_progress}`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
       </main>
 
       {/* ---- Body Stats & Goal Adjustment Modal ---- */}
@@ -1014,6 +947,14 @@ return (
           </div>
         </div>
       )}
+
+      {/* ---- Login Streak Pop-up Modal ---- */}
+      <StreakModal
+        isOpen={streakModalOpen}
+        onClose={() => setStreakModalOpen(false)}
+        streak={streak}
+        badges={allBadges}
+      />
     </div>
   );
 }

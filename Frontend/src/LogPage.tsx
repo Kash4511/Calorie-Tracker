@@ -13,7 +13,6 @@ const MEALS: Array<{ key: MealKey; label: string }> = [
 const NAV_LINKS = [
   { path: '/dashboard', label: 'Today' },
   { path: '/log', label: 'Log' },
-  { path: '/log?mode=search', label: 'Foods' },
   { path: '/progress', label: 'Progress' },
   { path: '/settings', label: 'Settings' },
 ];

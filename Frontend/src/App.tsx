@@ -7,6 +7,7 @@ import DashboardPage from './DashboardPage';
 import LogPage from './LogPage';
 import ProgressPage from './ProgressPage';
 import SettingsPage from './SettingsPage';
+import StreakPage from './StreakPage';
 import { ThemeProvider } from './ThemeContext';
 import './App.css';
 
@@ -182,6 +183,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/progress" element={<ProgressPage />} />
       <Route path="/log" element={<LogPage />} />
+      <Route path="/streak" element={<StreakPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -22,9 +22,39 @@ class ProfileSerializer(serializers.ModelSerializer):
     bmi = serializers.ReadOnlyField()
     bmi_category = serializers.ReadOnlyField()
 
+    first_name = serializers.CharField(source='user.first_name', required=False, allow_blank=True)
+    last_name = serializers.CharField(source='user.last_name', required=False, allow_blank=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    profile_photo = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        full = f"{obj.user.first_name or ''} {obj.user.last_name or ''}".strip()
+        return full or obj.user.username
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        user_changed = False
+        if 'first_name' in user_data:
+            instance.user.first_name = user_data['first_name']
+            user_changed = True
+        if 'last_name' in user_data:
+            instance.user.last_name = user_data['last_name']
+            user_changed = True
+        if user_changed:
+            instance.user.save()
+        return super().update(instance, validated_data)
+
     class Meta:
         model = Profile
         fields = [
+            'name',
+            'first_name',
+            'last_name',
+            'username',
+            'email',
+            'profile_photo',
             'goal',
             'activity_level',
             'gender',

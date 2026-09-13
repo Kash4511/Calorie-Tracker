@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -20,9 +20,7 @@ import {
   Sun,
   Moon,
   Check,
-  Award,
   Calendar,
-  Zap,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api, type ProgressResponse } from './api';
@@ -31,12 +29,11 @@ import { useTheme } from './ThemeContext';
 import './dashboard.css';
 import './progress.css';
 
-const NAV_TABS = ['Today', 'Log', 'Foods', 'Progress', 'Settings'] as const;
+const NAV_TABS = ['Today', 'Log', 'Progress', 'Settings'] as const;
 
 const NAV_ROUTES: Record<(typeof NAV_TABS)[number], string> = {
   Today: '/dashboard',
   Log: '/log',
-  Foods: '/log?mode=search',
   Progress: '/progress',
   Settings: '/settings',
 };
@@ -64,7 +61,7 @@ function formatShortDate(iso: string) {
 export default function ProgressPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const { resolvedTheme, toggleTheme } = useTheme();
 
   const [rangeDays, setRangeDays] = useState<number>(14);
@@ -174,9 +171,14 @@ export default function ProgressPage() {
           <span className="cal-logo-text">Caloria</span>
         </div>
 
-        <div className="cal-nav-greeting">
-          <p className="cal-nav-name">Progress &amp; Trends</p>
-          <p className="cal-nav-date">Analytics &amp; Weight History</p>
+        <div className="cal-nav-greeting" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {user?.profile_photo && (
+            <img src={user.profile_photo} alt={user?.name || user?.username || 'User'} className="cal-nav-avatar" />
+          )}
+          <div>
+            <p className="cal-nav-name">Progress &amp; Trends</p>
+            <p className="cal-nav-date">Analytics &amp; Weight History</p>
+          </div>
         </div>
 
         <nav className="cal-nav-tabs" aria-label="Primary">

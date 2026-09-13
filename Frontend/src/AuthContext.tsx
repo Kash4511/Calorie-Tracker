@@ -6,6 +6,10 @@ import type { AuthTokens } from './api';
 export interface AuthUser {
   username: string;
   email?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  profile_photo?: string | null;
 }
 
 interface AuthContextType {
@@ -19,6 +23,7 @@ interface AuthContextType {
     password2: string;
   }) => Promise<void>;
   logout: () => void;
+  updateUser: (updates: Partial<AuthUser>) => void;
   loading: boolean;
 }
 
@@ -55,10 +60,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const hasToken = !!localStorage.getItem('access_token');
     if (hasToken) {
       setIsAuthenticated(true);
-      setUser(readStoredUser());
+      const stored = readStoredUser();
+      setUser(stored);
+      // Background sync profile to pick up name or profile photo changes
+      api.getProfile().then((prof) => {
+        if (prof) {
+          const updated: AuthUser = {
+            username: prof.username || stored?.username || 'user',
+            email: prof.email || stored?.email,
+            first_name: prof.first_name,
+            last_name: prof.last_name,
+            name: prof.name,
+            profile_photo: prof.profile_photo,
+          };
+          setUser(updated);
+          writeStoredUser(updated);
+        }
+      }).catch(() => {
+        // ignore
+      });
     }
     setLoading(false);
   }, []);
+
+  const updateUser = (updates: Partial<AuthUser>) => {
+    setUser((prev) => {
+      const next: AuthUser = prev ? { ...prev, ...updates } : { username: 'user', ...updates };
+      writeStoredUser(next);
+      return next;
+    });
+  };
 
   const login = async (username: string, password: string) => {
     const tokens: AuthTokens = await api.login(username, password);
@@ -67,6 +98,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(profile);
     writeStoredUser(profile);
     setIsAuthenticated(true);
+    // Sync full profile
+    api.getProfile().then((prof) => {
+      if (prof) {
+        const updated: AuthUser = {
+          username: prof.username || username,
+          email: prof.email,
+          first_name: prof.first_name,
+          last_name: prof.last_name,
+          name: prof.name,
+          profile_photo: prof.profile_photo,
+        };
+        setUser(updated);
+        writeStoredUser(updated);
+      }
+    }).catch(() => {});
   };
 
   const register = async (data: {
@@ -95,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, login, register, logout, loading }}
+      value={{ isAuthenticated, user, login, register, logout, updateUser, loading }}
     >
       {children}
     </AuthContext.Provider>

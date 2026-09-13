@@ -60,6 +60,7 @@ class Profile(models.Model):
     longest_streak = models.PositiveIntegerField(default=0)
     last_active_date = models.DateField(null=True, blank=True)
     theme_preference = models.CharField(max_length=10, default='system')
+    profile_photo = models.TextField(blank=True, null=True, help_text="Base64 or URL profile image")
 
     def __str__(self):
         return f'{self.user.username} Profile'
