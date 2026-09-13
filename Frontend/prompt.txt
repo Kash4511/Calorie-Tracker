@@ -1,0 +1,12 @@
+Add a 'Strict Mode' toggle/slider next to the macro targets. When OFF, use the current standard targets (based on Mifflin-St Jeor + goal). When ON, tighten the risky macros (sugar, fat) based on my BMI category, while keeping protein at an achievable-but-effective level — don't make protein harder to hit, since that's the macro I actually need to increase.
+
+Logic:
+
+Underweight (BMI < 18.5): don't restrict fat/sugar aggressively — mild tightening only, since calorie deficit is a bigger risk than excess here
+Normal (18.5–24.9): standard strict caps — sugar ~25g (WHO stricter guideline), fat ~20% of calories
+Overweight (25–29.9): tighter — sugar ~20g, fat ~18% of calories
+Obese (30+): strictest — sugar ~15g, fat ~15% of calories, carbs trimmed slightly too
+
+Protein target stays constant across strict/non-strict — only recalculated by bodyweight (g/kg), not by BMI risk category.
+
+Show both numbers side by side (standard vs strict) when the toggle is hovered, so I can see the delta before committing. Label it clearly as a stricter/optional target, not a hard requirement, and pull the current BMI value from body stats automatically rather than asking me to re-enter it."
