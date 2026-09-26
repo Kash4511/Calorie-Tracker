@@ -23,13 +23,29 @@ export default defineConfig(({ mode }) => {
           configure: (proxy) => {
             proxy.on('error', (err, _req, res) => {
               console.error('[vite] /api proxy error:', err.message)
-              if (res && !res.headersSent) {
-                res.writeHead(502, { 'Content-Type': 'application/json' })
-                res.end(
-                  JSON.stringify({
-                    detail: `Backend unreachable at ${apiTarget}. Is Django 'manage.py runserver 0.0.0.0:8000' running?`,
-                  })
-                )
+              const typedRes = res as {
+                writeHead?: (code: number, headers: Record<string, string>) => void
+                end?: (data: string) => void
+                headersSent?: boolean
+                writableFinished?: boolean
+                finished?: boolean
+              }
+              const notYetResponded = !(
+                typedRes.headersSent === true ||
+                typedRes.writableFinished === true ||
+                typedRes.finished === true
+              )
+              if (typedRes && typedRes.writeHead && typedRes.end && notYetResponded) {
+                try {
+                  typedRes.writeHead(502, { 'Content-Type': 'application/json' })
+                  typedRes.end(
+                    JSON.stringify({
+                      detail: `Backend unreachable at ${apiTarget}. Is Django 'manage.py runserver 0.0.0.0:8000' running?`,
+                    })
+                  )
+                } catch {
+                  // swallow — connection already torn down
+                }
               }
             })
           },
