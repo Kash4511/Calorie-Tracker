@@ -1,6 +1,19 @@
-const DEFAULT_API_BASE_URL = '/api';
-const ENV_API_BASE_URL = import.meta.env.VITE_API_URL;
-const API_BASE_URL = ENV_API_BASE_URL?.replace(/\/$/, '') || DEFAULT_API_BASE_URL;
+function resolveApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL?.trim();
+  if (!envUrl) {
+    return '/api';
+  }
+  // Strip trailing slashes
+  const cleaned = envUrl.replace(/\/+$/, '');
+  // If the URL is an absolute URL (e.g. Render backend) without '/api',
+  // append '/api' so all endpoints match Django's mounted '/api/' routes
+  if (/^https?:\/\//i.test(cleaned) && !cleaned.endsWith('/api')) {
+    return `${cleaned}/api`;
+  }
+  return cleaned;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export const API_CONFIG = {
   baseUrl: API_BASE_URL,
