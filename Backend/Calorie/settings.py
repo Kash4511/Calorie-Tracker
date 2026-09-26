@@ -80,6 +80,29 @@ SIMPLE_JWT = {
 }
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+)
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+)
+CORS_EXPOSE_HEADERS = (
+    'content-type',
+    'x-request-id',
+)
 ROOT_URLCONF = 'Calorie.urls'
 
 TEMPLATES = [
@@ -103,9 +126,24 @@ WSGI_APPLICATION = 'Calorie.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+USE_LOCAL_DB = os.getenv('USE_LOCAL_DB', '').lower() in ('1', 'true', 'on', 'yes')
+DATABASE_URL = os.getenv('DATABASE_URL') or ''
+DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+SUPABASE_HOST_HINT = 'supabase.com'
 
-if DATABASE_URL:
+SUPABASE_CONFIGURED = bool(
+    (DATABASE_URL and SUPABASE_HOST_HINT in DATABASE_URL)
+    or (os.getenv('DB_HOST') and SUPABASE_HOST_HINT in os.getenv('DB_HOST') and DB_PASSWORD)
+)
+
+if USE_LOCAL_DB or not SUPABASE_CONFIGURED:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+elif DATABASE_URL:
     import urllib.parse as urlparse
     url = urlparse.urlparse(DATABASE_URL)
     DATABASES = {
@@ -116,6 +154,12 @@ if DATABASE_URL:
             'PASSWORD': url.password,
             'HOST': url.hostname,
             'PORT': str(url.port or 5432),
+            'OPTIONS': {
+                'connect_timeout': 5,
+                'sslmode': 'require',
+            },
+            'CONN_MAX_AGE': 600,
+            'CONN_HEALTH_CHECKS': True,
         }
     }
 else:
@@ -124,9 +168,15 @@ else:
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': os.getenv('DB_NAME', 'postgres'),
             'USER': os.getenv('DB_USER', 'postgres.rxaynevjgrzbulkcnjpf'),
-            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'PASSWORD': DB_PASSWORD,
             'HOST': os.getenv('DB_HOST', 'aws-0-ap-northeast-1.pooler.supabase.com'),
             'PORT': os.getenv('DB_PORT', '6543'),
+            'OPTIONS': {
+                'connect_timeout': 5,
+                'sslmode': 'require',
+            },
+            'CONN_MAX_AGE': 600,
+            'CONN_HEALTH_CHECKS': True,
         }
     }
 

@@ -1,4 +1,11 @@
-const API_BASE_URL = '/api';
+const DEFAULT_API_BASE_URL = '/api';
+const ENV_API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = ENV_API_BASE_URL?.replace(/\/$/, '') || DEFAULT_API_BASE_URL;
+
+export const API_CONFIG = {
+  baseUrl: API_BASE_URL,
+  isAbsolute: /^https?:\/\//i.test(API_BASE_URL),
+};
 
 export interface OnboardingStatus {
   onboarding_completed: boolean;
