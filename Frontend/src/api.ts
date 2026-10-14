@@ -1,16 +1,24 @@
+const PROD_BACKEND_URL = 'https://calorie-tracker-gfaz.onrender.com';
+
 function resolveApiBaseUrl(): string {
   const envUrl = import.meta.env.VITE_API_URL?.trim();
-  if (!envUrl) {
-    return '/api';
+  if (envUrl) {
+    // Strip trailing slashes
+    const cleaned = envUrl.replace(/\/+$/, '');
+    // If the URL is an absolute URL (e.g. Render backend) without '/api',
+    // append '/api' so all endpoints match Django's mounted '/api/' routes
+    if (/^https?:\/\//i.test(cleaned) && !cleaned.endsWith('/api')) {
+      return `${cleaned}/api`;
+    }
+    return cleaned;
   }
-  // Strip trailing slashes
-  const cleaned = envUrl.replace(/\/+$/, '');
-  // If the URL is an absolute URL (e.g. Render backend) without '/api',
-  // append '/api' so all endpoints match Django's mounted '/api/' routes
-  if (/^https?:\/\//i.test(cleaned) && !cleaned.endsWith('/api')) {
-    return `${cleaned}/api`;
+  // In production, call the Render backend directly to avoid 404s when
+  // VITE_API_URL is unconfigured and Vercel rewrites are not applied.
+  if (import.meta.env.PROD) {
+    return `${PROD_BACKEND_URL}/api`;
   }
-  return cleaned;
+  // In development, rely on the Vite dev proxy (/api -> http://127.0.0.1:8000).
+  return '/api';
 }
 
 const API_BASE_URL = resolveApiBaseUrl();
