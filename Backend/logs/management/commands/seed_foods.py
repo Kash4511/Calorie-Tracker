@@ -5,6 +5,7 @@
 
 from django.core.management.base import BaseCommand
 from logs.models import FoodItem
+from logs.food_data import USDA_FOODS
 
 # name, category, kcal, protein, carbs, fat, sugar — all per 100g
 STARTER_FOODS = [
@@ -208,10 +209,14 @@ STARTER_FOODS = [
 
 
 class Command(BaseCommand):
-    help = "Seed a starter FoodItem catalog"
+    help = "Seed the FoodItem catalog (curated dishes + USDA-verified basics)"
 
     def handle(self, *args, **options):
         created = 0
+        updated = 0
+
+        # Regional / prepared dishes — app-curated estimates.
+        # Created only when missing so hand-tuned rows are never clobbered.
         for name, category, kcal, p, c, f, s in STARTER_FOODS:
             _, was_created = FoodItem.objects.get_or_create(
                 name=name,
@@ -226,4 +231,27 @@ class Command(BaseCommand):
             )
             if was_created:
                 created += 1
-        self.stdout.write(self.style.SUCCESS(f"Seeded {created} food items ({len(STARTER_FOODS)} total in list)."))
+
+        # Basic whole foods — USDA FoodData Central verified values.
+        # Upserted so existing rows are corrected to the authoritative numbers.
+        for name, category, kcal, p, c, f, s in USDA_FOODS:
+            _, was_created = FoodItem.objects.update_or_create(
+                name=name,
+                defaults=dict(
+                    category=category,
+                    calories_per_100g=kcal,
+                    protein_per_100g=p,
+                    carbs_per_100g=c,
+                    fat_per_100g=f,
+                    sugar_per_100g=s,
+                ),
+            )
+            if was_created:
+                created += 1
+            else:
+                updated += 1
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Seeded {created} new food items and refreshed {updated} USDA-verified entries "
+            f"({len(STARTER_FOODS)} curated dishes + {len(USDA_FOODS)} USDA basics)."
+        ))
