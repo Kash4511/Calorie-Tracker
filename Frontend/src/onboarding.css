@@ -1,0 +1,277 @@
+/* ===========================================================
+   Onboarding Page — matches the dashboard design system
+   Reuses cal-* tokens defined in dashboard.css.
+   =========================================================== */
+
+.cal-ob {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Push the theme toggle + logout to the right without tabs */
+.cal-ob-spacer {
+  flex: 1 1 auto;
+}
+
+/* ---- Main content ---- */
+.cal-ob-main {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px clamp(20px, 4vw, 72px) 64px;
+}
+
+/* The single onboarding card — same look as cal-overview */
+.cal-ob-card {
+  width: 100%;
+  max-width: 640px;
+  padding: 36px 40px 40px;
+}
+
+/* ---- Progress section ---- */
+.cal-ob-progress {
+  margin-bottom: 28px;
+}
+.cal-ob-progress .cal-overview-track {
+  margin-bottom: 0;
+}
+.cal-ob-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cal-ink-muted);
+  margin-bottom: 10px;
+}
+.cal-ob-progress-head span:last-child {
+  color: var(--cal-ink);
+}
+.cal-ob-fill {
+  background: var(--cal-accent);
+}
+
+/* ---- Title + subtitle ---- */
+.cal-ob-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--cal-ink);
+  margin: 0 0 8px;
+}
+.cal-ob-subtitle {
+  font-size: 14.5px;
+  color: var(--cal-ink-muted);
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+
+/* ---- Error alert ---- */
+.cal-ob-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  margin-bottom: 22px;
+  font-size: 13.5px;
+}
+
+/* ===========================================================
+   Choice options (goal, activity, gender, diet)
+   =========================================================== */
+.cal-ob-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.cal-ob-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  background: var(--cal-card-bg);
+  border: 1.5px solid var(--cal-border);
+  border-radius: var(--cal-radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+.cal-ob-option:hover {
+  border-color: var(--cal-ink-muted);
+  background: var(--cal-pill-bg);
+}
+.cal-ob-option.is-selected {
+  border-color: var(--cal-accent);
+  background: var(--cal-accent-soft);
+}
+.cal-ob-option:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 2px;
+}
+.cal-ob-option-emoji {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.cal-ob-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cal-ob-option-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cal-ink);
+}
+.cal-ob-option-desc {
+  font-size: 12.5px;
+  color: var(--cal-ink-muted);
+}
+.cal-ob-option-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cal-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--cal-accent);
+  background: #ffffff;
+  transition: all 0.15s ease;
+}
+.cal-ob-option.is-selected .cal-ob-option-check {
+  background: var(--cal-accent);
+  border-color: var(--cal-accent);
+  color: #ffffff;
+}
+
+/* ===========================================================
+   Number input (age, height, weight)
+   =========================================================== */
+.cal-ob-number {
+  margin-bottom: 28px;
+}
+.cal-ob-segment {
+  display: inline-flex;
+  background: var(--cal-track);
+  border-radius: var(--cal-radius-pill);
+  padding: 4px;
+  gap: 2px;
+  margin-bottom: 18px;
+}
+.cal-ob-segment-btn {
+  padding: 7px 16px;
+  border: none;
+  background: transparent;
+  border-radius: var(--cal-radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cal-ink-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.cal-ob-segment-btn:hover {
+  color: var(--cal-ink);
+}
+.cal-ob-segment-btn.is-selected {
+  background: var(--cal-card-bg);
+  color: var(--cal-accent-hover);
+  box-shadow: var(--cal-shadow-sm);
+}
+.cal-ob-input-wrap {
+  max-width: 280px;
+}
+.cal-ob-input.is-error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+.cal-ob-hint {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--cal-ink-faint);
+}
+.cal-ob-hint.is-error {
+  color: #dc2626;
+}
+
+/* ===========================================================
+   Summary strip on the last step
+   =========================================================== */
+.cal-ob-summary {
+  margin-bottom: 28px;
+}
+
+/* ===========================================================
+   Navigation buttons (Back / Continue / Complete)
+   =========================================================== */
+.cal-ob-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cal-ob-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  font-size: 14.5px;
+  border-radius: var(--cal-radius-sm);
+}
+.cal-ob-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===========================================================
+   Responsive
+   =========================================================== */
+@media (max-width: 640px) {
+  .cal-ob-card {
+    padding: 28px 22px 32px;
+  }
+  .cal-ob-title {
+    font-size: 24px;
+  }
+  .cal-ob-nav {
+    flex-direction: column-reverse;
+  }
+  .cal-ob-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .cal-ob-input-wrap {
+    max-width: 100%;
+  }
+}
+
+/* ===========================================================
+   Dark mode overrides
+   =========================================================== */
+[data-theme='dark'] .cal-ob-option-check {
+  background: #1e293b;
+  border-color: #334155;
+}
+[data-theme='dark'] .cal-ob-option.is-selected .cal-ob-option-check {
+  background: var(--cal-accent);
+  border-color: var(--cal-accent);
+}
+[data-theme='dark'] .cal-ob-segment-btn.is-selected {
+  background: #1e293b;
+}
+[data-theme='dark'] .cal-ob-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+[data-theme='dark'] .cal-ob-input.is-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
