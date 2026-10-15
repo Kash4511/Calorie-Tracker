@@ -14,6 +14,7 @@ import {
   Zap,
   Sun,
   Moon,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +38,7 @@ interface MealSection {
   key: MealKey;
   label: string;
   kcal: number;
-  items: string[]; // meal item names, empty = "Nothing logged yet."
+  items: Array<{ id: number; name: string; calories: number }>; // empty = "Nothing logged yet."
 }
 
 const NAV_TABS = ['Today', 'Log', 'Progress', 'Settings'] as const;
@@ -75,6 +76,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<(typeof NAV_TABS)[number]>('Today');
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [streakModalOpen, setStreakModalOpen] = useState(false);
+  const [deletingMealId, setDeletingMealId] = useState<number | null>(null);
+  const [mealError, setMealError] = useState('');
   const dashboardDate = useTodayIso();
 
   useEffect(() => {
@@ -108,7 +111,7 @@ export default function DashboardPage() {
     key,
     label: key[0].toUpperCase() + key.slice(1),
     kcal: dashboard?.meals[key].kcal ?? 0,
-    items: dashboard?.meals[key].items.map((item) => item.name) ?? [],
+    items: dashboard?.meals[key].items ?? [],
   })), [dashboard]);
 
   const streak = dashboard?.streak;
@@ -346,6 +349,20 @@ export default function DashboardPage() {
 
   const handleAddMeal = (key: MealKey) => {
     navigate(`/log?meal=${key}`);
+  };
+
+  const handleDeleteMeal = async (id: number) => {
+    setDeletingMealId(id);
+    setMealError('');
+    try {
+      await api.deleteMeal(id);
+      const updated = await api.getDashboard(dashboardDate);
+      setDashboard(updated);
+    } catch {
+      setMealError('Could not delete that entry. Please try again.');
+    } finally {
+      setDeletingMealId(null);
+    }
   };
 
 return (
@@ -726,6 +743,11 @@ return (
 
         {/* ---- Meals — full width, stacked ---- */}
         <section className="cal-meals-grid">
+          {mealError && (
+            <p className="cal-meal-error" role="alert">
+              {mealError}
+            </p>
+          )}
           {meals.map((meal) => (
             <div
               className="cal-meal-card"
@@ -753,8 +775,21 @@ return (
                 <p className="cal-meal-empty">Nothing logged yet.</p>
               ) : (
                 <ul className="cal-meal-items">
-                  {meal.items.map((item, i) => (
-                    <li key={i}>{item}</li>
+                  {meal.items.map((item) => (
+                    <li key={item.id} className="cal-meal-item">
+                      <span className="cal-meal-item-name">{item.name}</span>
+                      <span className="cal-meal-item-kcal">{item.calories} kcal</span>
+                      <button
+                        type="button"
+                        className="cal-meal-item-delete"
+                        onClick={() => handleDeleteMeal(item.id)}
+                        disabled={deletingMealId === item.id}
+                        aria-label={`Delete ${item.name} from ${meal.label}`}
+                        title="Delete this entry"
+                      >
+                        <Trash2 size={14} aria-hidden="true" />
+                      </button>
+                    </li>
                   ))}
                 </ul>
               )}

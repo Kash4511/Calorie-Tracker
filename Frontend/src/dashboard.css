@@ -842,10 +842,80 @@ button {
   color: var(--cal-ink-faint);
 }
 .cal-meal-items {
+  list-style: none;
   margin: 12px 0 0;
-  padding-left: 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cal-meal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
   font-size: 14px;
   color: var(--cal-ink);
+  border-top: 1px solid var(--cal-border);
+}
+.cal-meal-item:first-child {
+  border-top: none;
+}
+.cal-meal-item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cal-meal-item-kcal {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--cal-ink-muted);
+  white-space: nowrap;
+}
+.cal-meal-item-delete {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--cal-radius-sm);
+  background: transparent;
+  color: var(--cal-ink-faint);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.cal-meal-item-delete:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.cal-meal-item-delete:focus-visible {
+  outline: 2px solid var(--cal-accent);
+  outline-offset: 2px;
+}
+.cal-meal-item-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cal-meal-error {
+  margin: 0;
+  padding: 11px 14px;
+  border-radius: var(--cal-radius-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+[data-theme='dark'] .cal-meal-item-delete:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+[data-theme='dark'] .cal-meal-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
 }
 
 /* ===========================================================
