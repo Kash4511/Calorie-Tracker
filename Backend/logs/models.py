@@ -13,6 +13,10 @@ class MealEntry(models.Model):
     fat_g = models.FloatField(default=0)
     sugar_g = models.FloatField(default=0)
     servings = models.FloatField(default=1)
+    # Amount the user typed together with the unit they picked (e.g. 3 + "egg").
+    # Legacy rows default to grams: quantity = servings * 100, unit_label = 'g'.
+    quantity = models.FloatField(null=True, blank=True)
+    unit_label = models.CharField(max_length=40, default='g')
     food_item = models.ForeignKey('FoodItem', null=True, blank=True, on_delete=models.SET_NULL, related_name='meal_entries')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -52,3 +56,30 @@ class FoodItem(models.Model):
  
     def __str__(self):
         return self.name
+
+
+class FoodUnit(models.Model):
+    """A unit a food can be logged in.
+
+    Weight units (g/kg/oz/lb) are universal and defined in ``logs.units``.
+    Count units ("egg", "slice", "piece") are food-specific and stored here as
+    a gram weight per single unit, so any quantity converts to grams cleanly.
+    """
+    KIND_CHOICES = [('weight', 'Weight'), ('count', 'Count')]
+
+    food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name='units')
+    label = models.CharField(max_length=40)
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES, default='count')
+    grams_per_unit = models.FloatField()
+    is_default = models.BooleanField(default=False)
+    # Who first added a custom unit (null for the pre-configured catalog units).
+    created_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name='custom_food_units'
+    )
+
+    class Meta:
+        ordering = ['-is_default', 'label']
+        unique_together = ('food_item', 'label')
+
+    def __str__(self):
+        return f'{self.label} ({self.food_item.name})'

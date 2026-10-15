@@ -38,7 +38,13 @@ interface MealSection {
   key: MealKey;
   label: string;
   kcal: number;
-  items: Array<{ id: number; name: string; calories: number }>; // empty = "Nothing logged yet."
+  items: Array<{ id: number; name: string; calories: number; quantity: number | null; unit_label: string }>; // empty = "Nothing logged yet."
+}
+
+function formatQuantity(quantity: number | null, unitLabel: string): string {
+  if (quantity === null || quantity === undefined) return '';
+  const rounded = Math.round(quantity * 100) / 100;
+  return `${rounded} ${unitLabel}`;
 }
 
 const NAV_TABS = ['Today', 'Log', 'Progress', 'Settings'] as const;
@@ -777,7 +783,10 @@ return (
                 <ul className="cal-meal-items">
                   {meal.items.map((item) => (
                     <li key={item.id} className="cal-meal-item">
-                      <span className="cal-meal-item-name">{item.name}</span>
+                      <span className="cal-meal-item-name">
+                        {item.name}
+                        {item.quantity !== null && <small className="cal-meal-item-qty">{formatQuantity(item.quantity, item.unit_label)}</small>}
+                      </span>
                       <span className="cal-meal-item-kcal">{item.calories} kcal</span>
                       <button
                         type="button"

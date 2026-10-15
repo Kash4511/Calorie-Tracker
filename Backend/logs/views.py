@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
 from django.utils import timezone
@@ -9,13 +9,30 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from Auth.models import Profile
-from .models import MealEntry, ActivityEntry, WaterLog, WeightLog, FoodItem
+from .models import MealEntry, ActivityEntry, WaterLog, WeightLog, FoodItem, FoodUnit
 from .serializers import (
     MealEntrySerializer, ActivityEntrySerializer,
     WaterLogSerializer, WeightLogSerializer,
-    FoodItemSerializer,
+    FoodItemSerializer, FoodUnitSerializer,
 )
+from .units import convert_to_grams, UnitError, WEIGHT_UNITS
 from .badges import get_user_badges_and_streak
+
+
+def _nutrition_for_grams(food, grams):
+    """Return (servings_factor, macro_dict) for a gram amount of a food.
+
+    ``servings`` stays the per-100g factor so every existing aggregate and the
+    historical log rows keep working unchanged.
+    """
+    factor = grams / 100
+    return factor, {
+        'calories': round(food.calories_per_100g * factor),
+        'protein_g': round(food.protein_per_100g * factor, 1),
+        'carbs_g': round(food.carbs_per_100g * factor, 1),
+        'fat_g': round(food.fat_per_100g * factor, 1),
+        'sugar_g': round(food.sugar_per_100g * factor, 1),
+    }
 
 
 class MealEntryListCreateView(generics.ListCreateAPIView):
@@ -42,6 +59,26 @@ class MealEntryUpdateView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         entry = self.get_object()
         raw_servings = self.request.data.get('servings')
+        quantity = self.request.data.get('quantity')
+        unit_label = self.request.data.get('unit_label')
+
+        # Change the unit and/or the quantity — e.g. convert an old gram-based
+        # entry to eggs, or fix a mistyped amount.
+        if entry.food_item_id and (quantity is not None or unit_label is not None):
+            food = entry.food_item
+            label = unit_label if unit_label is not None else entry.unit_label
+            amount = quantity if quantity is not None else (
+                entry.quantity if entry.quantity is not None else entry.servings * 100
+            )
+            try:
+                amount, unit, grams = convert_to_grams(food, label, amount)
+            except UnitError as exc:
+                raise serializers.ValidationError({'unit_label': str(exc)})
+            factor, macros = _nutrition_for_grams(food, grams)
+            serializer.save(quantity=amount, unit_label=unit['label'], servings=round(factor, 4), **macros)
+            return
+
+        # Legacy path: servings is the per-100g factor.
         if raw_servings is not None and entry.food_item_id:
             try:
                 servings = float(raw_servings)
@@ -50,13 +87,9 @@ class MealEntryUpdateView(generics.RetrieveUpdateDestroyAPIView):
             except (TypeError, ValueError):
                 raise serializers.ValidationError({'servings': 'Servings must be positive.'})
             food = entry.food_item
+            factor, macros = _nutrition_for_grams(food, servings * 100)
             serializer.save(
-                servings=servings,
-                calories=round(food.calories_per_100g * servings),
-                protein_g=round(food.protein_per_100g * servings, 1),
-                carbs_g=round(food.carbs_per_100g * servings, 1),
-                fat_g=round(food.fat_per_100g * servings, 1),
-                sugar_g=round(food.sugar_per_100g * servings, 1),
+                servings=round(servings, 4), quantity=round(servings * 100, 1), unit_label='g', **macros
             )
             return
         serializer.save()
@@ -201,7 +234,7 @@ class TodayDashboardView(APIView):
         for key, _label in MealEntry.MEAL_CHOICES:
             qs = meals_qs.filter(meal_type=key)
             meals_by_type[key] = {
-                'items': list(qs.values('id', 'name', 'calories')),
+                'items': list(qs.values('id', 'name', 'calories', 'quantity', 'unit_label')),
                 'kcal': qs.aggregate(t=Sum('calories'))['t'] or 0,
             }
 
@@ -257,7 +290,7 @@ class FoodSearchView(generics.ListAPIView):
 
     def get_queryset(self):
         q = self.request.query_params.get('q', '').strip()
-        qs = FoodItem.objects.all()
+        qs = FoodItem.objects.prefetch_related('units')
         if q:
             search_terms = [q]
             if q.lower() == 'daal':
@@ -274,52 +307,93 @@ class FoodSearchView(generics.ListAPIView):
 class MealEntryFromFoodView(APIView):
     """
     POST /api/logs/meals/from-food/
-    body: { "food_item_id": 3, "grams": 150, "meal_type": "breakfast" }
-    Computes calories/macros server-side from the per-100g catalog values —
-    the frontend never does this math itself.
+    body: { "food_item_id": 3, "quantity": 3, "unit_label": "egg", "meal_type": "breakfast" }
+    Legacy weight body also works: { "food_item_id": 3, "grams": 150, ... }
+
+    Any quantity/unit is converted to grams and then to calories/macros
+    server-side from the per-100g catalog values — the frontend never does
+    this math itself.
     """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         food_id = request.data.get('food_item_id')
-        grams = request.data.get('grams')
         meal_type = request.data.get('meal_type')
         selected_date = request.data.get('date', str(timezone.localdate()))
+        quantity = request.data.get('quantity')
+        unit_label = request.data.get('unit_label')
+        grams = request.data.get('grams')
 
-        if not all([food_id, grams, meal_type]):
+        if food_id is None or meal_type is None:
             return Response(
-                {'detail': 'food_item_id, grams, and meal_type are required.'},
+                {'detail': 'food_item_id and meal_type are required.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            food = FoodItem.objects.get(id=food_id)
-        except FoodItem.DoesNotExist:
-            return Response({'detail': 'Food item not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            grams = float(grams)
-            if grams <= 0:
-                raise ValueError
-        except (TypeError, ValueError):
-            return Response({'detail': 'grams must be a positive number.'}, status=status.HTTP_400_BAD_REQUEST)
+        food = get_object_or_404(FoodItem, id=food_id)
 
         valid_meal_types = {k for k, _ in MealEntry.MEAL_CHOICES}
         if meal_type not in valid_meal_types:
             return Response({'detail': f'meal_type must be one of {sorted(valid_meal_types)}.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        factor = grams / 100
+        if quantity is not None:
+            try:
+                quantity, unit, grams = convert_to_grams(food, unit_label, quantity)
+            except UnitError as exc:
+                return Response({'detail': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            unit_label = unit['label']
+        elif grams is not None:
+            # Legacy grams-only body — logged as a weight entry.
+            try:
+                grams = float(grams)
+                if grams <= 0:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return Response({'detail': 'grams must be a positive number.'}, status=status.HTTP_400_BAD_REQUEST)
+            quantity, unit_label = grams, 'g'
+        else:
+            return Response(
+                {'detail': 'Provide "quantity" with "unit_label", or "grams".'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        factor, macros = _nutrition_for_grams(food, grams)
         entry = MealEntry.objects.create(
             user=request.user,
             date=selected_date,
             meal_type=meal_type,
             name=food.name,
-            calories=round(food.calories_per_100g * factor),
-            protein_g=round(food.protein_per_100g * factor, 1),
-            carbs_g=round(food.carbs_per_100g * factor, 1),
-            fat_g=round(food.fat_per_100g * factor, 1),
-            sugar_g=round(food.sugar_per_100g * factor, 1),
-            servings=round(factor, 2),
+            quantity=quantity,
+            unit_label=unit_label,
+            servings=round(factor, 4),
             food_item=food,
+            **macros,
         )
         return Response(MealEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+
+
+class FoodUnitListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/logs/foods/<food_id>/units/  — units valid for this food
+    POST /api/logs/foods/<food_id>/units/  — add a custom count unit
+         body: { "label": "scoop", "grams_per_unit": 30 }
+    """
+    serializer_class = FoodUnitSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_food(self):
+        return get_object_or_404(FoodItem, id=self.kwargs['food_id'])
+
+    def get_queryset(self):
+        return FoodUnit.objects.filter(food_item_id=self.kwargs['food_id'])
+
+    def perform_create(self, serializer):
+        food = self.get_food()
+        label = (serializer.validated_data.get('label') or '').strip()
+        if label.lower() in WEIGHT_UNITS:
+            raise serializers.ValidationError({'label': f'"{label}" is a built-in weight unit.'})
+        if FoodUnit.objects.filter(food_item=food, label__iexact=label).exists():
+            raise serializers.ValidationError({'label': f'{food.name} already has a "{label}" unit.'})
+        if serializer.validated_data.get('is_default'):
+            FoodUnit.objects.filter(food_item=food, is_default=True).update(is_default=False)
+        serializer.save(food_item=food, kind='count', created_by=self.request.user)

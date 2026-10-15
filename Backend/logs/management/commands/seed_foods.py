@@ -4,8 +4,9 @@
 # Run with: python manage.py seed_foods
 
 from django.core.management.base import BaseCommand
-from logs.models import FoodItem
+from logs.models import FoodItem, FoodUnit
 from logs.food_data import USDA_FOODS
+from logs.unit_data import iter_standard_units
 
 # name, category, kcal, protein, carbs, fat, sugar — all per 100g
 STARTER_FOODS = [
@@ -251,7 +252,26 @@ class Command(BaseCommand):
             else:
                 updated += 1
 
+        # Pre-configured count units (egg, slice, cup, ...) for common foods.
+        # Upserted so corrections to grams_per_unit take effect.
+        units_created = 0
+        for food_name, label, grams_per_unit, is_default in iter_standard_units():
+            food = FoodItem.objects.filter(name=food_name).first()
+            if not food:
+                continue
+            if is_default:
+                # keep exactly one default per food
+                FoodUnit.objects.filter(food_item=food, is_default=True).exclude(label=label).update(is_default=False)
+            _, unit_created = FoodUnit.objects.update_or_create(
+                food_item=food,
+                label=label,
+                defaults={'grams_per_unit': grams_per_unit, 'is_default': is_default, 'kind': 'count'},
+            )
+            if unit_created:
+                units_created += 1
+
         self.stdout.write(self.style.SUCCESS(
             f"Seeded {created} new food items and refreshed {updated} USDA-verified entries "
-            f"({len(STARTER_FOODS)} curated dishes + {len(USDA_FOODS)} USDA basics)."
+            f"({len(STARTER_FOODS)} curated dishes + {len(USDA_FOODS)} USDA basics); "
+            f"ensured {units_created} new measurement units."
         ))

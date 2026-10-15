@@ -276,6 +276,30 @@
 .log-preview-values { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; font-size: 13px; }
 .log-preview-values span { background: #fff; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--cal-accent); color: var(--cal-ink-900); }
 
+/* ---------- Quantity / unit picker ---------- */
+.log-unit-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.log-custom-unit { margin-bottom: 10px; }
+.log-unit-actions { display: flex; gap: 12px; align-items: center; }
+.log-unit-actions .log-add-btn { width: auto; padding: 8px 16px; font-size: 13px; }
+.log-link-btn {
+  background: none;
+  border: none;
+  color: var(--cal-accent);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.log-link-btn:hover { text-decoration: underline; }
+.log-unit-error { color: #dc2626; font-size: 12px; margin: 6px 0; }
+[data-theme='dark'] .log-unit-error { color: #f87171; }
+
 /* ---------- Manual entry form ---------- */
 .log-manual-form {
   display: flex;

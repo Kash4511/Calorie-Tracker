@@ -44,6 +44,15 @@ export interface OnboardingData {
 
 export type MealKey = 'breakfast' | 'lunch' | 'snacks' | 'dinner';
 
+export interface FoodUnit {
+  id?: number;
+  label: string;
+  kind: 'weight' | 'count';
+  grams_per_unit: number;
+  is_default: boolean;
+  is_custom: boolean;
+}
+
 export interface FoodItem {
   id: number;
   name: string;
@@ -53,6 +62,8 @@ export interface FoodItem {
   carbs_per_100g: number;
   fat_per_100g: number;
   sugar_per_100g: number;
+  units: FoodUnit[];
+  default_unit: { label: string; kind: 'weight' | 'count'; grams_per_unit: number };
 }
 
 export interface MealEntry {
@@ -66,6 +77,10 @@ export interface MealEntry {
   fat_g: number;
   sugar_g: number;
   servings: number;
+  quantity: number | null;
+  unit_label: string;
+  unit_kind: 'weight' | 'count';
+  grams: number;
   food_item_id: number | null;
 }
 
@@ -212,7 +227,7 @@ export interface DashboardData {
   macros: { consumed: Record<'protein' | 'carbs' | 'fat' | 'sugar', number>; goal: Record<string, number> };
   water: { liters: number; goal: number };
   weight: { today_kg: number | null; goal_kg: number | null };
-  meals: Record<MealKey, { items: Array<{ id: number; name: string; calories: number }>; kcal: number }>;
+  meals: Record<MealKey, { items: Array<{ id: number; name: string; calories: number; quantity: number | null; unit_label: string }>; kcal: number }>;
   profile_summary?: ProfileSummary;
   streak?: StreakData;
   badges?: BadgeItem[];
@@ -364,8 +379,14 @@ export const api = {
   getMeals: (date: string): Promise<MealEntry[]> =>
     request<MealEntry[]>(`/logs/meals/?date=${encodeURIComponent(date)}`),
 
-  addFood: (data: { date: string; meal_type: MealKey; food_item_id: number; grams: number }): Promise<MealEntry> =>
+  addFood: (data: { date: string; meal_type: MealKey; food_item_id: number; quantity: number; unit_label: string }): Promise<MealEntry> =>
     request<MealEntry>('/logs/meals/from-food/', { method: 'POST', body: JSON.stringify(data) }),
+
+  getFoodUnits: (foodId: number): Promise<FoodUnit[]> =>
+    request<FoodUnit[]>(`/logs/foods/${foodId}/units/`),
+
+  addFoodUnit: (foodId: number, data: { label: string; grams_per_unit: number; is_default?: boolean }): Promise<FoodUnit> =>
+    request<FoodUnit>(`/logs/foods/${foodId}/units/`, { method: 'POST', body: JSON.stringify(data) }),
 
   addManualMeal: (data: {
     date?: string;
@@ -394,8 +415,8 @@ export const api = {
   }): Promise<unknown> =>
     request<unknown>('/logs/activity/', { method: 'POST', body: JSON.stringify(data) }),
 
-  updateMeal: (id: number, servings: number): Promise<MealEntry> =>
-    request<MealEntry>(`/logs/meals/${id}/edit/`, { method: 'PATCH', body: JSON.stringify({ servings }) }),
+  updateMeal: (id: number, data: { quantity: number; unit_label: string }): Promise<MealEntry> =>
+    request<MealEntry>(`/logs/meals/${id}/edit/`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   deleteMeal: (id: number): Promise<void> =>
     request<void>(`/logs/meals/${id}/`, { method: 'DELETE' }),

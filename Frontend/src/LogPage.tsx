@@ -60,12 +60,20 @@ export default function LogPage() {
   const [addMode, setAddMode] = useState<AddMode>('search');
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [query, setQuery] = useState('');
-  const [grams, setGrams] = useState('100');
+  const [quantity, setQuantity] = useState('100');
+  const [unitLabel, setUnitLabel] = useState('g');
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [status, setStatus] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [busy, setBusy] = useState(false);
   const [foodsLoading, setFoodsLoading] = useState(true);
   const [foodsError, setFoodsError] = useState(false);
+
+  // Custom unit composer (shown inside the nutrition preview)
+  const [customUnitOpen, setCustomUnitOpen] = useState(false);
+  const [customUnitLabel, setCustomUnitLabel] = useState('');
+  const [customUnitGrams, setCustomUnitGrams] = useState('');
+  const [unitSaving, setUnitSaving] = useState(false);
+  const [unitError, setUnitError] = useState('');
 
   // Scan tab
   const [barcode, setBarcode] = useState('');
@@ -86,19 +94,28 @@ export default function LogPage() {
   const [minutes, setMinutes] = useState('30');
   const [steps, setSteps] = useState('0');
 
-  const nutritionPreview = useMemo(() => {
+  const selectedUnit = useMemo(() => {
     if (!selectedFood) return null;
-    const amount = Number(grams);
+    return selectedFood.units.find((unit) => unit.label === unitLabel)
+      ?? selectedFood.units.find((unit) => unit.label === selectedFood.default_unit.label)
+      ?? null;
+  }, [selectedFood, unitLabel]);
+
+  const nutritionPreview = useMemo(() => {
+    if (!selectedFood || !selectedUnit) return null;
+    const amount = Number(quantity);
     if (!Number.isFinite(amount) || amount <= 0) return null;
-    const factor = amount / 100;
+    const grams = amount * selectedUnit.grams_per_unit;
+    const factor = grams / 100;
     return {
+      grams,
       calories: Math.round(selectedFood.calories_per_100g * factor),
       protein: Number((selectedFood.protein_per_100g * factor).toFixed(1)),
       carbs: Number((selectedFood.carbs_per_100g * factor).toFixed(1)),
       fat: Number((selectedFood.fat_per_100g * factor).toFixed(1)),
       sugar: Number((selectedFood.sugar_per_100g * factor).toFixed(1)),
     };
-  }, [selectedFood, grams]);
+  }, [selectedFood, selectedUnit, quantity]);
 
   const estimatedBurn = useMemo(() => {
     const mins = Number(minutes);
@@ -133,8 +150,15 @@ export default function LogPage() {
     return `https://images.unsplash.com/${image}?auto=format&fit=crop&w=96&h=96&q=80&fm=png`;
   };
 
-  const addFood = async (foodToAdd: FoodItem) => {
-    const amount = Number(grams);
+  const selectFood = (food: FoodItem) => {
+    setSelectedFood(food);
+    setUnitLabel(food.default_unit.label);
+    setQuantity(food.default_unit.kind === 'count' ? '1' : '100');
+    setCustomUnitOpen(false);
+    setUnitError('');
+  };
+
+  const addFood = async (foodToAdd: FoodItem, amount: number, label: string) => {
     if (!Number.isFinite(amount) || amount <= 0) {
       setStatus({ text: 'Enter a quantity greater than zero.', type: 'error' });
       return;
@@ -146,18 +170,54 @@ export default function LogPage() {
         date: today,
         meal_type: mealType,
         food_item_id: foodToAdd.id,
-        grams: amount,
+        quantity: amount,
+        unit_label: label,
       });
       setStatus({
         text: `Added ${entry.name} (${entry.calories} kcal) to ${mealType}!`,
         type: 'success',
       });
       setSelectedFood(null);
-      setGrams('100');
+      setQuantity('100');
+      setUnitLabel('g');
     } catch {
       setStatus({ text: 'Could not add this food. Please try again.', type: 'error' });
     } finally {
       setBusy(false);
+    }
+  };
+
+  // One-tap add from the result list uses the food's own default unit.
+  const quickAdd = (food: FoodItem) => {
+    const def = food.default_unit;
+    addFood(food, def.kind === 'count' ? 1 : 100, def.label);
+  };
+
+  const addCustomUnit = async () => {
+    if (!selectedFood) return;
+    const label = customUnitLabel.trim();
+    const gramsPer = Number(customUnitGrams);
+    if (!label) {
+      setUnitError('Enter a unit name, e.g. scoop.');
+      return;
+    }
+    if (!Number.isFinite(gramsPer) || gramsPer <= 0) {
+      setUnitError('Enter how many grams one unit weighs.');
+      return;
+    }
+    setUnitSaving(true);
+    setUnitError('');
+    try {
+      const created = await api.addFoodUnit(selectedFood.id, { label, grams_per_unit: gramsPer });
+      setSelectedFood({ ...selectedFood, units: [...selectedFood.units, created] });
+      setUnitLabel(created.label);
+      setCustomUnitLabel('');
+      setCustomUnitGrams('');
+      setCustomUnitOpen(false);
+    } catch {
+      setUnitError('Could not save that unit. It may already exist for this food.');
+    } finally {
+      setUnitSaving(false);
     }
   };
 
@@ -171,7 +231,7 @@ export default function LogPage() {
       const results = await api.getFoods(barcode.trim());
       if (results.length) {
         setFoods(results);
-        setSelectedFood(results[0]);
+        selectFood(results[0]);
         setStatus({ text: `Found ${results[0].name}.`, type: 'success' });
       } else {
         setStatus({ text: 'No saved food matches that barcode yet — try Manual entry.', type: 'error' });
@@ -252,6 +312,47 @@ export default function LogPage() {
     }
   };
 
+  const quantityControls = selectedFood && selectedUnit ? (
+    <div className="log-unit-controls">
+      <label className="log-field">Quantity
+        <input type="number" min="0" step="any" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+      </label>
+      <label className="log-field">Unit
+        <select value={unitLabel} onChange={(event) => setUnitLabel(event.target.value)}>
+          {selectedFood.units.map((unit) => (
+            <option key={unit.label} value={unit.label}>
+              {unit.label}{unit.kind === 'count' ? ` (${unit.grams_per_unit} g each)` : ''}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  ) : null;
+
+  const customUnitComposer = selectedFood ? (
+    <div className="log-custom-unit">
+      {customUnitOpen ? (
+        <>
+          <div className="log-unit-controls">
+            <label className="log-field">Unit name
+              <input value={customUnitLabel} onChange={(event) => setCustomUnitLabel(event.target.value)} placeholder="e.g. scoop" />
+            </label>
+            <label className="log-field">Grams per unit
+              <input type="number" min="0" step="any" value={customUnitGrams} onChange={(event) => setCustomUnitGrams(event.target.value)} placeholder="30" />
+            </label>
+          </div>
+          {unitError && <p className="log-unit-error">{unitError}</p>}
+          <div className="log-unit-actions">
+            <button type="button" className="log-add-btn" onClick={addCustomUnit} disabled={unitSaving}>{unitSaving ? 'Saving…' : 'Save unit'}</button>
+            <button type="button" className="log-link-btn" onClick={() => { setCustomUnitOpen(false); setUnitError(''); }}>Cancel</button>
+          </div>
+        </>
+      ) : (
+        <button type="button" className="log-link-btn" onClick={() => setCustomUnitOpen(true)}>+ Add a custom unit</button>
+      )}
+    </div>
+  ) : null;
+
   return <div className="log-root">
     <header className="log-navbar">
       <button type="button" className="log-back-btn" onClick={() => navigate('/dashboard')} aria-label="Back to dashboard"><ChevronLeft size={18} /></button>
@@ -319,19 +420,20 @@ export default function LogPage() {
             {foodsLoading ? <p className="log-empty">Loading foods...</p>
               : foodsError ? <p className="log-empty">Food search is unavailable. Check that the backend is running and you are signed in.</p>
               : foods.length ? foods.map((food) => (
-                <div className="log-food-result" key={food.id} onClick={() => setSelectedFood(food)}>
+                <div className="log-food-result" key={food.id} onClick={() => selectFood(food)}>
                   <img className="log-food-image" src={foodImage(food)} alt="" loading="lazy" />
                   <span><strong>{food.name}</strong><small>{food.category} · {food.calories_per_100g} kcal / 100 g</small></span>
-                  <button type="button" className="log-food-plus" onClick={(e) => { e.stopPropagation(); addFood(food); setSelectedFood(null); }} disabled={busy} aria-label={`Add ${food.name} to ${mealType}`}><Plus size={18} /></button>
+                  <button type="button" className="log-food-plus" onClick={(e) => { e.stopPropagation(); quickAdd(food); }} disabled={busy} aria-label={`Add ${food.name} to ${mealType}`}><Plus size={18} /></button>
                 </div>
               )) : query.trim() ? <p className="log-empty">No foods found for "{query}".</p> : null}
           </div>
           {nutritionPreview && selectedFood && (
             <div className="log-nutrition-preview">
-              <p className="log-preview-label">Nutrition for {selectedFood.name} ({grams}g):</p>
+              <p className="log-preview-label">Nutrition for {selectedFood.name} ({quantity} {unitLabel} ≈ {nutritionPreview.grams.toFixed(0)} g):</p>
               <div className="log-preview-values"><span>{nutritionPreview.calories} kcal</span><span>P {nutritionPreview.protein}g</span><span>C {nutritionPreview.carbs}g</span><span>F {nutritionPreview.fat}g</span><span>S {nutritionPreview.sugar}g</span></div>
-              <label className="log-field" style={{ marginBottom: 10 }}>Quantity (g)<input type="number" min="1" value={grams} onChange={(event) => setGrams(event.target.value)} /></label>
-              <button type="button" className="log-add-btn log-add-btn--wide" onClick={() => { if (selectedFood) { addFood(selectedFood); setSelectedFood(null); } }} disabled={busy}>Add to {mealType}</button>
+              {quantityControls}
+              {customUnitComposer}
+              <button type="button" className="log-add-btn log-add-btn--wide" onClick={() => addFood(selectedFood, Number(quantity), unitLabel)} disabled={busy}>Add to {mealType}</button>
             </div>
           )}
         </section>
@@ -346,9 +448,11 @@ export default function LogPage() {
           </div>
           {selectedFood && nutritionPreview && (
             <div className="log-nutrition-preview">
-              <p className="log-preview-label">Nutrition for {selectedFood.name} ({grams}g):</p>
+              <p className="log-preview-label">Nutrition for {selectedFood.name} ({quantity} {unitLabel} ≈ {nutritionPreview.grams.toFixed(0)} g):</p>
               <div className="log-preview-values"><span>{nutritionPreview.calories} kcal</span><span>P {nutritionPreview.protein}g</span><span>C {nutritionPreview.carbs}g</span><span>F {nutritionPreview.fat}g</span><span>S {nutritionPreview.sugar}g</span></div>
-              <button type="button" className="log-add-btn log-add-btn--wide" onClick={() => { if (selectedFood) { addFood(selectedFood); setSelectedFood(null); setBarcode(''); } }} disabled={busy}>Add to {mealType}</button>
+              {quantityControls}
+              {customUnitComposer}
+              <button type="button" className="log-add-btn log-add-btn--wide" onClick={() => { const food = selectedFood; addFood(food, Number(quantity), unitLabel); setBarcode(''); }} disabled={busy}>Add to {mealType}</button>
             </div>
           )}
         </section>

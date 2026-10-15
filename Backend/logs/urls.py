@@ -9,6 +9,7 @@ from .views import (
     WeightHistoryView,
     TodayDashboardView,
     FoodSearchView,
+    FoodUnitListCreateView,
     MealEntryFromFoodView,
     BadgesView,
 )
@@ -17,6 +18,7 @@ urlpatterns = [
     path('dashboard/today/', TodayDashboardView.as_view(), name='dashboard-today'),
     path('badges/', BadgesView.as_view(), name='badges'),
     path('foods/', FoodSearchView.as_view(), name='food-search'),
+    path('foods/<int:food_id>/units/', FoodUnitListCreateView.as_view(), name='food-units'),
     path('meals/from-food/', MealEntryFromFoodView.as_view(), name='meal-from-food'),
     path('meals/', MealEntryListCreateView.as_view(), name='meal-list-create'),
     path('meals/<int:pk>/', MealEntryDeleteView.as_view(), name='meal-delete'),
