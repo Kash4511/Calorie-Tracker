@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { Flame, Sun, Moon, ArrowRight, BarChart3, Target, Salad } from 'lucide-react';
 import { AuthProvider, useAuth } from './AuthContext';
+import { ThemeProvider, useTheme } from './ThemeContext';
 import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 import OnboardingPage from './OnboardingPage';
@@ -8,170 +10,97 @@ import LogPage from './LogPage';
 import ProgressPage from './ProgressPage';
 import SettingsPage from './SettingsPage';
 import StreakPage from './StreakPage';
-import { ThemeProvider } from './ThemeContext';
-import './App.css';
+import './dashboard.css';
+import './auth.css';
+
+const LANDING_FEATURES = [
+  { icon: <BarChart3 size={18} />, text: 'Smart calorie tracking' },
+  { icon: <Target size={18} />, text: 'Personalized goals' },
+  { icon: <Salad size={18} />, text: 'Dietary preferences' },
+];
 
 function LandingPage() {
   const { isAuthenticated, loading } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   if (loading) {
-    return (
-      <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-        Loading...
-      </div>
-    );
+    return <div className="cal-root cal-auth-root cal-auth-loading">Loading…</div>;
   }
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const themeLabel = `Switch to ${resolvedTheme === 'dark' ? 'Light' : 'Dark'} mode`;
+
   return (
-    <div style={landingStyles.container}>
-      <div style={landingStyles.hero}>
-        <div style={landingStyles.heroInner}>
-          <div style={landingStyles.badge}>🥗 Calorie Tracker</div>
-          <h1 style={landingStyles.heroTitle}>
+    <div className="cal-root cal-auth-root">
+      <header className="cal-navbar" role="banner">
+        <div className="cal-nav-brand">
+          <span className="cal-logo-icon" aria-hidden="true">
+            <Flame size={16} />
+          </span>
+          <span className="cal-logo-text">Caloria</span>
+        </div>
+
+        <div className="cal-auth-spacer" />
+
+        <button
+          type="button"
+          className="cal-theme-toggle-btn"
+          onClick={toggleTheme}
+          title={themeLabel}
+          aria-label={themeLabel}
+        >
+          {resolvedTheme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
+      </header>
+
+      <main className="cal-landing-main">
+        <div className="cal-landing-hero">
+          <span className="cal-landing-badge">
+            <Flame size={15} aria-hidden="true" />
+            Calorie Tracker
+          </span>
+          <h1 className="cal-landing-title">
             Track your calories,
             <br />
             achieve your goals.
           </h1>
-          <p style={landingStyles.heroSubtitle}>
+          <p className="cal-landing-subtitle">
             The simplest way to log meals, monitor macros, and stay on track with
             your fitness journey — whether you want to lose, maintain, or gain.
           </p>
-          <div style={landingStyles.heroButtons}>
-            <Link to="/register" style={landingStyles.primaryBtn}>
+          <div className="cal-landing-actions">
+            <Link to="/register" className="cal-landing-btn cal-landing-btn--primary">
               Get Started Free
+              <ArrowRight size={16} aria-hidden="true" />
             </Link>
-            <Link to="/login" style={landingStyles.secondaryBtn}>
+            <Link to="/login" className="cal-landing-btn cal-landing-btn--secondary">
               Sign In
             </Link>
           </div>
-          <div style={landingStyles.features}>
-            <div style={landingStyles.feature}>
-              <div style={landingStyles.featureIcon}>📊</div>
-              <div style={landingStyles.featureText}>Smart calorie tracking</div>
-            </div>
-            <div style={landingStyles.feature}>
-              <div style={landingStyles.featureIcon}>🎯</div>
-              <div style={landingStyles.featureText}>Personalized goals</div>
-            </div>
-            <div style={landingStyles.feature}>
-              <div style={landingStyles.featureIcon}>🥑</div>
-              <div style={landingStyles.featureText}>Dietary preferences</div>
-            </div>
+          <div className="cal-landing-features">
+            {LANDING_FEATURES.map((feature) => (
+              <div key={feature.text} className="cal-landing-feature">
+                <span className="cal-landing-feature-icon" aria-hidden="true">
+                  {feature.icon}
+                </span>
+                <span className="cal-landing-feature-text">{feature.text}</span>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
-
-const landingStyles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100svh',
-    width: '100%',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  },
-  hero: {
-    minHeight: '100svh',
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 24px',
-  },
-  heroInner: {
-    maxWidth: '700px',
-    textAlign: 'center',
-    color: '#fff',
-  },
-  badge: {
-    display: 'inline-block',
-    padding: '8px 20px',
-    background: 'rgba(255,255,255,0.15)',
-    borderRadius: '999px',
-    fontSize: '14px',
-    fontWeight: 600,
-    marginBottom: '24px',
-    backdropFilter: 'blur(8px)',
-  },
-  heroTitle: {
-    fontSize: '56px',
-    fontWeight: 800,
-    lineHeight: 1.1,
-    marginBottom: '20px',
-  },
-  heroSubtitle: {
-    fontSize: '18px',
-    lineHeight: 1.7,
-    marginBottom: '36px',
-    opacity: 0.92,
-    maxWidth: '560px',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-  },
-  heroButtons: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: '48px',
-  },
-  primaryBtn: {
-    padding: '14px 32px',
-    background: '#fff',
-    color: '#5a67d8',
-    textDecoration: 'none',
-    borderRadius: '10px',
-    fontWeight: 700,
-    fontSize: '15px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-  },
-  secondaryBtn: {
-    padding: '14px 32px',
-    background: 'rgba(255,255,255,0.15)',
-    color: '#fff',
-    textDecoration: 'none',
-    borderRadius: '10px',
-    fontWeight: 700,
-    fontSize: '15px',
-    backdropFilter: 'blur(8px)',
-  },
-  features: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-    gap: '16px',
-  },
-  feature: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    background: 'rgba(255,255,255,0.1)',
-    padding: '14px 18px',
-    borderRadius: '12px',
-    backdropFilter: 'blur(8px)',
-  },
-  featureIcon: {
-    fontSize: '26px',
-  },
-  featureText: {
-    fontSize: '14px',
-    fontWeight: 500,
-    textAlign: 'left',
-  },
-};
 
 function AppRoutes() {
   const { loading } = useAuth();
 
   if (loading) {
-    return (
-      <div style={{ minHeight: '100svh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Loading...
-      </div>
-    );
+    return <div className="cal-root cal-auth-root cal-auth-loading">Loading…</div>;
   }
 
   return (
