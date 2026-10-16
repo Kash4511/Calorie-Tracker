@@ -1,0 +1,33 @@
+{
+  "title": "Indian Food Nutrition & Calories Dataset - 250+ Items",
+  "id": "indian-food-nutrition-calories-dataset",
+  "licenses": [
+    {
+      "name": "CC-BY-SA-4.0"
+    }
+  ],
+  "keywords": [
+    "nutrition",
+    "indian-food",
+    "calories",
+    "health",
+    "machine-learning",
+    "beginner",
+    "food-analysis",
+    "diet",
+    "protein",
+    "carbohydrates"
+  ],
+  "subtitle": "Comprehensive nutritional data for 250+ Indian dishes - Perfect for ML & Analysis",
+  "description": "A comprehensive nutritional dataset containing 250+ popular Indian food items with detailed macronutrient and micronutrient information. Includes calories, protein, fat, carbs, fiber, vitamins, minerals, cooking methods, and regional classifications. Perfect for beginners practicing data analysis, machine learning projects, and nutritional research.",
+  "resources": [
+    {
+      "path": "indian_food_nutrition_complete.csv",
+      "description": "Main dataset containing 250+ Indian food items with complete nutritional information"
+    },
+    {
+      "path": "README.md",
+      "description": "Comprehensive documentation with usage examples and dataset details"
+    }
+  ]
+}

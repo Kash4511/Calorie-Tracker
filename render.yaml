@@ -5,7 +5,7 @@ services:
     rootDir: Backend
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput || true"
     startCommand: "python manage.py migrate && gunicorn Calorie.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4"
-    autoDeploy: false
+    autoDeploy: true
     envVars:
       - key: DATABASE_URL
         sync: false

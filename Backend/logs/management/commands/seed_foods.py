@@ -6,6 +6,7 @@
 from django.core.management.base import BaseCommand
 from logs.models import FoodItem, FoodUnit
 from logs.food_data import USDA_FOODS
+from logs.food_data_indian import INDIAN_FOODS
 from logs.unit_data import iter_standard_units
 
 # name, category, kcal, protein, carbs, fat, sugar — all per 100g
@@ -252,6 +253,30 @@ class Command(BaseCommand):
             else:
                 updated += 1
 
+        # Indian dish dataset — the authoritative source for these dishes.
+        # Matched case-insensitively so it refreshes an existing catalog row
+        # ("Gulab jamun") instead of creating a case-duplicate ("Gulab Jamun").
+        indian_created = 0
+        indian_updated = 0
+        for name, category, kcal, p, c, f, s in INDIAN_FOODS:
+            values = dict(
+                category=category,
+                calories_per_100g=kcal,
+                protein_per_100g=p,
+                carbs_per_100g=c,
+                fat_per_100g=f,
+                sugar_per_100g=s,
+            )
+            food = FoodItem.objects.filter(name__iexact=name).first()
+            if food:
+                for field, value in values.items():
+                    setattr(food, field, value)
+                food.save(update_fields=list(values))
+                indian_updated += 1
+            else:
+                FoodItem.objects.create(name=name, **values)
+                indian_created += 1
+
         # Pre-configured count units (egg, slice, cup, ...) for common foods.
         # Upserted so corrections to grams_per_unit take effect.
         units_created = 0
@@ -273,5 +298,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"Seeded {created} new food items and refreshed {updated} USDA-verified entries "
             f"({len(STARTER_FOODS)} curated dishes + {len(USDA_FOODS)} USDA basics); "
+            f"applied {len(INDIAN_FOODS)} Indian dataset dishes "
+            f"({indian_created} new, {indian_updated} refreshed); "
             f"ensured {units_created} new measurement units."
         ))

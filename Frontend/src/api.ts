@@ -66,6 +66,23 @@ export interface FoodItem {
   default_unit: { label: string; kind: 'weight' | 'count'; grams_per_unit: number };
 }
 
+export interface RecentFood {
+  id: number;
+  name: string;
+  meal_type: MealKey;
+  food_item_id: number | null;
+  quantity: number | null;
+  unit_label: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  sugar_g: number;
+  logged_at: string;
+  /** Catalog nutrition + units for library foods, null for manual entries. */
+  food: FoodItem | null;
+}
+
 export interface MealEntry {
   id: number;
   date: string;
@@ -375,6 +392,9 @@ export const api = {
 
   getFoods: (query: string): Promise<FoodItem[]> =>
     request<FoodItem[]>(`/logs/foods/?q=${encodeURIComponent(query)}`),
+
+  getRecentFoods: (limit = 8): Promise<RecentFood[]> =>
+    request<RecentFood[]>(`/logs/foods/recent/?limit=${limit}`),
 
   getMeals: (date: string): Promise<MealEntry[]> =>
     request<MealEntry[]>(`/logs/meals/?date=${encodeURIComponent(date)}`),

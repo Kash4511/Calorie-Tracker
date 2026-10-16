@@ -278,10 +278,7 @@ class BadgesView(APIView):
 
     def get(self, request):
         return Response(get_user_badges_and_streak(request.user))
-        # ---- Append to logs/views.py ----
-# (needs added to the existing imports:
-#    from .models import FoodItem   (add to the existing MealEntry, ActivityEntry... line)
-#    from .serializers import FoodItemSerializer  (add to the existing import line) )
+
 
 class FoodSearchView(generics.ListAPIView):
     """GET /api/logs/foods/?q=alm  — searches the catalog by name, case-insensitive."""
@@ -302,6 +299,58 @@ class FoodSearchView(generics.ListAPIView):
                 query |= Q(name__icontains=term)
             qs = qs.filter(query)
         return qs[:200]  # keep the catalog responsive without hiding common foods
+
+
+class RecentFoodsView(APIView):
+    """
+    GET /api/logs/foods/recent/?limit=8
+
+    The foods this user logged most recently, newest first and de-duplicated by
+    name — including dishes they typed in manually, which have no catalog row.
+    Powers the "Recently used" strip at the top of the log search.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            limit = int(request.query_params.get('limit', 8))
+        except (TypeError, ValueError):
+            limit = 8
+        limit = max(1, min(limit, 25))
+
+        entries = (
+            MealEntry.objects.filter(user=request.user)
+            .select_related('food_item')
+            .prefetch_related('food_item__units')
+            .order_by('-created_at')[:200]  # bounded scan so heavy loggers stay fast
+        )
+
+        recents, seen = [], set()
+        for entry in entries:
+            key = entry.name.strip().lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            recents.append({
+                'id': entry.id,
+                'name': entry.name,
+                'meal_type': entry.meal_type,
+                'food_item_id': entry.food_item_id,
+                'quantity': entry.quantity,
+                'unit_label': entry.unit_label,
+                'calories': entry.calories,
+                'protein_g': entry.protein_g,
+                'carbs_g': entry.carbs_g,
+                'fat_g': entry.fat_g,
+                'sugar_g': entry.sugar_g,
+                'logged_at': entry.created_at,
+                # Catalog nutrition + units when it came from the food library,
+                # None for a manually typed entry.
+                'food': FoodItemSerializer(entry.food_item).data if entry.food_item_id else None,
+            })
+            if len(recents) >= limit:
+                break
+        return Response(recents)
 
 
 class MealEntryFromFoodView(APIView):

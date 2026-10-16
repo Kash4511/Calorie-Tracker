@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Flame, LogOut, Plus, Repeat, ScanLine, Search, SquarePen, Sun, Moon } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, Flame, History, LogOut, Plus, Repeat, ScanLine, Search, SquarePen, Sun, Moon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { api, type FoodItem, type MealKey } from './api';
+import { api, type FoodItem, type MealKey, type RecentFood } from './api';
 import { useAuth } from './AuthContext';
 import { useTheme } from './ThemeContext';
 import './log.css';
@@ -67,6 +67,17 @@ export default function LogPage() {
   const [busy, setBusy] = useState(false);
   const [foodsLoading, setFoodsLoading] = useState(true);
   const [foodsError, setFoodsError] = useState(false);
+
+  // Recently used foods — sourced from log history so both library foods and
+  // ones typed in manually resurface at the top of search.
+  const [recentFoods, setRecentFoods] = useState<RecentFood[]>([]);
+  const loadRecent = useCallback(() => {
+    api.getRecentFoods(8).then(setRecentFoods).catch(() => setRecentFoods([]));
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) loadRecent();
+  }, [isAuthenticated, loadRecent]);
 
   // Custom unit composer (shown inside the nutrition preview)
   const [customUnitOpen, setCustomUnitOpen] = useState(false);
@@ -180,6 +191,7 @@ export default function LogPage() {
       setSelectedFood(null);
       setQuantity('100');
       setUnitLabel('g');
+      loadRecent();
     } catch {
       setStatus({ text: 'Could not add this food. Please try again.', type: 'error' });
     } finally {
@@ -191,6 +203,39 @@ export default function LogPage() {
   const quickAdd = (food: FoodItem) => {
     const def = food.default_unit;
     addFood(food, def.kind === 'count' ? 1 : 100, def.label);
+  };
+
+  // Tapping a "Recently used" chip. Library foods open the preview so the
+  // amount/unit can be adjusted; manual entries re-log with the same values.
+  const reAddRecent = async (recent: RecentFood) => {
+    if (recent.food) {
+      selectFood(recent.food);
+      return;
+    }
+    setBusy(true);
+    setStatus(null);
+    try {
+      const entry = await api.addManualMeal({
+        date: today,
+        meal_type: mealType,
+        name: recent.name,
+        calories: recent.calories,
+        protein_g: recent.protein_g,
+        carbs_g: recent.carbs_g,
+        fat_g: recent.fat_g,
+        sugar_g: recent.sugar_g,
+        servings: 1,
+      });
+      setStatus({
+        text: `Added ${entry.name} (${entry.calories} kcal) to ${mealType}!`,
+        type: 'success',
+      });
+      loadRecent();
+    } catch {
+      setStatus({ text: 'Could not add this food. Please try again.', type: 'error' });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const addCustomUnit = async () => {
@@ -278,6 +323,7 @@ export default function LogPage() {
         fat: '',
         sugar: '',
       });
+      loadRecent();
     } catch {
       setStatus({ text: 'Could not add manual food. Please check your connection.', type: 'error' });
     } finally {
@@ -416,6 +462,32 @@ export default function LogPage() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search foods (e.g. chicken breast, apple, dal, salmon, rice)..."
           />
+          {recentFoods.length > 0 && (
+            <div className="log-recent">
+              <p className="log-recent-label"><History size={13} /> Recently used</p>
+              <div className="log-recent-list">
+                {recentFoods.map((recent) => (
+                  <button
+                    key={recent.id}
+                    type="button"
+                    className="log-recent-chip"
+                    onClick={() => reAddRecent(recent)}
+                    disabled={busy}
+                    title={recent.food
+                      ? `Open ${recent.name} (${recent.calories} kcal last time)`
+                      : `Add ${recent.name} again (${recent.calories} kcal)`}
+                  >
+                    <span className="log-recent-name">{recent.name}</span>
+                    <small>
+                      {recent.food
+                        ? `Last: ${recent.quantity ?? ''} ${recent.unit_label} · ${recent.calories} kcal`
+                        : `${recent.calories} kcal · added manually`}
+                    </small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className={`log-food-results${query.trim() ? ' is-drawer-open' : ''}`} role="listbox" aria-label="Food search results">
             {foodsLoading ? <p className="log-empty">Loading foods...</p>
               : foodsError ? <p className="log-empty">Food search is unavailable. Check that the backend is running and you are signed in.</p>

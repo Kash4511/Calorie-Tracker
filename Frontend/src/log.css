@@ -264,6 +264,48 @@
 
 .log-empty { color: var(--cal-ink-500); font-size: 13px; margin: 12px 0 0; }
 
+/* ---------- Recently used strip ---------- */
+.log-recent { margin-top: 14px; }
+.log-recent-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cal-ink-500);
+  margin: 0 0 8px;
+}
+.log-recent-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.log-recent-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: 0 0 auto;
+  max-width: 190px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--cal-border);
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.log-recent-chip:hover { border-color: var(--cal-accent); }
+.log-recent-chip:disabled { opacity: 0.6; cursor: not-allowed; }
+.log-recent-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--cal-ink-900);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-recent-chip small { font-size: 11.5px; color: var(--cal-ink-500); }
+
 /* ---------- Nutrition preview ---------- */
 .log-nutrition-preview {
   background: var(--cal-accent-soft);
@@ -441,6 +483,7 @@ html[data-theme='dark'] .log-root {
 [data-theme='dark'] .log-meal-tab,
 [data-theme='dark'] .log-panel,
 [data-theme='dark'] .log-food-result,
+[data-theme='dark'] .log-recent-chip,
 [data-theme='dark'] .log-navlink-signout,
 [data-theme='dark'] .log-search-input,
 [data-theme='dark'] .log-barcode-input,
